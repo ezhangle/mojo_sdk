@@ -237,11 +237,9 @@
       ],
       'dependencies': [
         'mojo_application_bindings',
-        'mojo_application_bindings_mojom',
       ],
       'export_dependent_settings': [
         'mojo_application_bindings',
-        'mojo_application_bindings_mojom',
       ],
     },
     {
