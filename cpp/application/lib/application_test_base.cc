@@ -52,6 +52,10 @@ ApplicationTestBase::ApplicationTestBase() : application_impl_(nullptr) {
 ApplicationTestBase::~ApplicationTestBase() {
 }
 
+ApplicationDelegate* ApplicationTestBase::GetApplicationDelegate() {
+  return &default_application_delegate_;
+}
+
 void ApplicationTestBase::SetUpWithArgs(const Array<String>& args) {
   // A run loop is needed for ApplicationImpl initialization and communication.
   Environment::InstantiateDefaultRunLoop();

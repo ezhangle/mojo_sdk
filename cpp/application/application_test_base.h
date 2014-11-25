@@ -5,6 +5,7 @@
 #ifndef MOJO_PUBLIC_CPP_APPLICATION_APPLICATION_TEST_BASE_H_
 #define MOJO_PUBLIC_CPP_APPLICATION_APPLICATION_TEST_BASE_H_
 
+#include "mojo/public/cpp/application/application_delegate.h"
 #include "mojo/public/cpp/bindings/array.h"
 #include "mojo/public/cpp/bindings/string.h"
 #include "mojo/public/cpp/system/macros.h"
@@ -12,7 +13,6 @@
 
 namespace mojo {
 
-class ApplicationDelegate;
 class ApplicationImpl;
 
 namespace test {
@@ -35,7 +35,7 @@ class ApplicationTestBase : public testing::Test {
   ApplicationImpl* application_impl() { return application_impl_; }
 
   // Get the ApplicationDelegate for the application to be tested.
-  virtual ApplicationDelegate* GetApplicationDelegate() = 0;
+  virtual ApplicationDelegate* GetApplicationDelegate();
 
   // A testing::Test::SetUp helper to override the application command
   // line arguments.
@@ -48,6 +48,8 @@ class ApplicationTestBase : public testing::Test {
  private:
   // The application implementation instance, reconstructed for each test.
   ApplicationImpl* application_impl_;
+  // The application delegate used if GetApplicationDelegate is not overridden.
+  ApplicationDelegate default_application_delegate_;
 
   MOJO_DISALLOW_COPY_AND_ASSIGN(ApplicationTestBase);
 };
