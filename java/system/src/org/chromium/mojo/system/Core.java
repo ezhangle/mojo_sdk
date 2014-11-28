@@ -67,11 +67,11 @@ public interface Core {
         /**
          * Change the peer closed bit of this signal.
          *
-         * @param peer_closed the new value of the peer closed bit.
+         * @param peerClosed the new value of the peer closed bit.
          * @return this.
          */
-        public HandleSignals setPeerClosed(boolean closed) {
-            return setFlag(FLAG_PEER_CLOSED, closed);
+        public HandleSignals setPeerClosed(boolean peerClosed) {
+            return setFlag(FLAG_PEER_CLOSED, peerClosed);
         }
 
         /**
