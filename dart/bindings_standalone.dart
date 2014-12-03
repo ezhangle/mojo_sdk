@@ -2,15 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-library core;
+library bindings;
+
+import 'core_standalone.dart' as core;
 
 import 'dart:async';
-import 'dart:isolate';
+import 'dart:convert';
+import 'dart:core';
+import 'dart:mirrors';
 import 'dart:typed_data';
 
-part 'src/buffer.dart';
-part 'src/data_pipe.dart';
-part 'src/handle.dart';
-part 'src/handle_watcher.dart';
-part 'src/message_pipe.dart';
-part 'src/types.dart';
+part 'src/client.dart';
+part 'src/codec.dart';
+part 'src/interface.dart';

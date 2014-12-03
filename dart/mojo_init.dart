@@ -4,9 +4,9 @@
 
 library mojo_init;
 
+import 'core_standalone.dart' as core;
 import 'dart:async';
-
-import 'core.dart' as core;
+import 'dart:isolate';
 import 'dart-ext:src/mojo_dart_init';
 
 void _init() native "MojoLibrary_Init";

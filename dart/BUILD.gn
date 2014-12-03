@@ -51,7 +51,9 @@ copy("copy_core_library") {
 copy("bindings") {
   sources = [
     "bindings.dart",
+    "bindings_standalone.dart",
     "core.dart",
+    "core_standalone.dart",
     "mojo_init.dart",
     "src/buffer.dart",
     "src/client.dart",
