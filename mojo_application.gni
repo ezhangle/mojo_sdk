@@ -69,8 +69,9 @@ template("mojo_native_application") {
         datadeps = [ "//mojo/public/tools:copy_mojo_shell" ]
       }
     }
+    deps = [ "//mojo/public/c/system:for_shared_library" ]
     if (defined(invoker.deps)) {
-      deps = invoker.deps
+      deps += invoker.deps
     }
     if (defined(invoker.forward_dependent_configs_from)) {
       forward_dependent_configs_from = invoker.forward_dependent_configs_from

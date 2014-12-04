@@ -6,7 +6,13 @@ config("gles2_config") {
   defines = [ "GLES2_USE_MOJO" ]
 }
 
-source_set("gles2") {
+group("gles2") {
+  public_configs = [ "//third_party/khronos:khronos_headers" ]
+  public_deps = [ ":headers" ]
+  deps = [ "//mojo/public/platform/native:gles2_thunks" ]
+}
+
+source_set("headers") {
   sources = [
     "gles2.h",
     "gles2_export.h",
