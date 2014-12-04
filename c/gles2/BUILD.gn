@@ -8,8 +8,12 @@ config("gles2_config") {
 
 group("gles2") {
   public_configs = [ "//third_party/khronos:khronos_headers" ]
-  public_deps = [ ":headers" ]
-  deps = [ "//mojo/public/platform/native:gles2_thunks" ]
+  public_deps = [
+    ":headers",
+  ]
+  deps = [
+    "//mojo/public/platform/native:gles2_thunks",
+  ]
 }
 
 source_set("headers") {
