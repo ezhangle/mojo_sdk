@@ -22,10 +22,6 @@ group("public") {
     deps += [ "python" ]
   }
 
-  if (mojo_use_dart) {
-    deps += [ "dart" ]
-  }
-
   if (is_android) {
     deps += [
       "java:system",

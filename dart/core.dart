@@ -5,6 +5,7 @@
 library core;
 
 import 'dart:async';
+import 'dart:collection';
 import 'dart:isolate';
 import 'dart:typed_data';
 
@@ -13,4 +14,6 @@ part 'src/data_pipe.dart';
 part 'src/handle.dart';
 part 'src/handle_watcher.dart';
 part 'src/message_pipe.dart';
+part 'src/timer_impl.dart';
+part 'src/timer_queue.dart';
 part 'src/types.dart';
