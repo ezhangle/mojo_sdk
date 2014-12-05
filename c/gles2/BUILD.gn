@@ -12,7 +12,7 @@ group("gles2") {
     ":headers",
   ]
   deps = [
-    "//mojo/public/platform/native:gles2_thunks",
+    "../../platform/native:gles2_thunks",
   ]
 }
 
@@ -25,7 +25,7 @@ source_set("headers") {
   public_configs = [ ":gles2_config" ]
 
   public_deps = [
-    "//mojo/public/c/environment",
-    "//mojo/public/c/system",
+    "../environment",
+    "../system",
   ]
 }
