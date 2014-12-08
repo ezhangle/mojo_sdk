@@ -12,6 +12,11 @@ mojo_root = get_path_info("../..", "abspath")
 # the parent directory of the Mojo public SDK (given in |mojo_sdk_deps|).
 # Generates a source_set that has the mojo_sdk_deps added as ordinary deps
 # rebased to the current directory.
+# By default, restricts the entries that are given in invoker.deps and
+# invoker.public_deps to be only within the same file and on a small set of
+# whitelisted external dependencies. This check can be elided by setting
+# restrict_external_dependencies to false in the invoker. DO NOT DO THIS in
+# //mojo/public.
 #
 # Example of a mojo_sdk_source_set:
 #
@@ -76,12 +81,26 @@ template("mojo_sdk_source_set") {
       configs += invoker.configs
     }
 
+    if (defined(invoker.allow_circular_includes_from)) {
+      allow_circular_includes_from = invoker.allow_circular_includes_from
+    }
+
+    if (defined(invoker.public_deps) || (defined(invoker.deps))) {
+      restrict_external_deps = true
+      if (defined(invoker.restrict_external_deps)) {
+        restrict_external_deps = invoker.restrict_external_deps
+      }
+    }
+
     public_deps = []
     if (defined(invoker.public_deps)) {
       foreach(dep, invoker.public_deps) {
-        # The only public_deps that are not specified relative to the location
-        # of the Mojo SDK should be on targets within the same file.
-        assert(get_path_info(dep, "dir") == ".")
+        if (restrict_external_deps) {
+          # The only deps that are not specified relative to the location of
+          # the Mojo SDK should be on targets within the same file or on a
+          # whitelisted set of external dependencies.
+          assert(get_path_info(dep, "dir") == ".")
+        }
         public_deps += [ dep ]
       }
     }
@@ -96,11 +115,13 @@ template("mojo_sdk_source_set") {
     deps = []
     if (defined(invoker.deps)) {
       foreach(dep, invoker.deps) {
-        # The only deps that are not specified relative to the location of the
-        # Mojo SDK should be on targets within the same file or on a
-        # whitelisted set of external dependencies.
-        dep_dir = get_path_info(dep, "dir")
-        assert(dep_dir == "." || dep == "//testing/gtest")
+        if (restrict_external_deps) {
+          # The only deps that are not specified relative to the location of
+          # the Mojo SDK should be on targets within the same file or on a
+          # whitelisted set of external dependencies.
+          dep_dir = get_path_info(dep, "dir")
+          assert(dep_dir == "." || dep == "//testing/gtest")
+        }
         deps += [ dep ]
       }
     }
