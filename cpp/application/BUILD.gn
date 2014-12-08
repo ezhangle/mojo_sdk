@@ -2,10 +2,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("../../mojo_sdk.gni")
-
 # GYP version: mojo/public/mojo_public.gyp:mojo_application_base
-mojo_sdk_source_set("application") {
+source_set("application") {
   sources = [
     "application_connection.h",
     "application_delegate.h",
@@ -26,16 +24,16 @@ mojo_sdk_source_set("application") {
     "lib/weak_service_provider.h",
   ]
 
-  mojo_sdk_deps = [
-    "mojo/public/cpp/bindings",
-    "mojo/public/cpp/environment",
-    "mojo/public/cpp/system",
-    "mojo/public/interfaces/application",
+  deps = [
+    "//mojo/public/cpp/bindings",
+    "//mojo/public/cpp/environment",
+    "//mojo/public/cpp/system",
+    "//mojo/public/interfaces/application",
   ]
 }
 
 # GYP version: mojo/public/mojo_public.gyp:mojo_application_standalone
-mojo_sdk_source_set("standalone") {
+source_set("standalone") {
   sources = [
     "lib/application_runner.cc",
   ]
@@ -44,13 +42,13 @@ mojo_sdk_source_set("standalone") {
     ":application",
   ]
 
-  mojo_sdk_deps = [
-    "mojo/public/cpp/environment:standalone",
-    "mojo/public/cpp/utility",
+  deps = [
+    "//mojo/public/cpp/environment:standalone",
+    "//mojo/public/cpp/utility",
   ]
 }
 
-mojo_sdk_source_set("test_support") {
+source_set("test_support") {
   testonly = true
   sources = [
     "application_test_base.h",
@@ -59,17 +57,14 @@ mojo_sdk_source_set("test_support") {
 
   deps = [
     ":application",
+    "//mojo/public/cpp/bindings",
+    "//mojo/public/cpp/environment",
+    "//mojo/public/cpp/system",
     "//testing/gtest",
-  ]
-
-  mojo_sdk_deps = [
-    "mojo/public/cpp/bindings",
-    "mojo/public/cpp/environment",
-    "mojo/public/cpp/system",
   ]
 }
 
-mojo_sdk_source_set("test_support_standalone") {
+source_set("test_support_standalone") {
   testonly = true
   sources = [
     "lib/application_test_main.cc",
@@ -78,14 +73,10 @@ mojo_sdk_source_set("test_support_standalone") {
   public_deps = [
     ":test_support",
   ]
-
   deps = [
     ":application",
-  ]
-
-  mojo_sdk_deps = [
-    "mojo/public/cpp/environment:standalone",
-    "mojo/public/cpp/system",
-    "mojo/public/cpp/utility",
+    "//mojo/public/cpp/environment:standalone",
+    "//mojo/public/cpp/system",
+    "//mojo/public/cpp/utility",
   ]
 }

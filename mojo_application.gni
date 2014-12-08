@@ -2,8 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("mojo.gni")
-import("mojo_sdk.gni")
+import("//mojo/public/mojo.gni")
 
 # Generate a binary mojo application.The parameters of this template are those
 # of a shared library.
@@ -59,26 +58,18 @@ template("mojo_native_application") {
     if (defined(invoker.libs)) {
       libs = invoker.libs
     }
-
-    if (use_prebuilt_mojo_shell) {
-      copy_mojo_shell =
-        rebase_path("mojo/public/tools:copy_mojo_shell", ".", mojo_root)
-    }
-
     # Copy the prebuilt mojo_shell if using it.
     if (defined(invoker.datadeps)) {
       datadeps = invoker.datadeps
       if (use_prebuilt_mojo_shell) {
-        datadeps += [ copy_mojo_shell ]
+        datadeps += [ "//mojo/public/tools:copy_mojo_shell" ]
       }
     } else {
       if (use_prebuilt_mojo_shell) {
-        datadeps = [ copy_mojo_shell ]
+        datadeps = [ "//mojo/public/tools:copy_mojo_shell" ]
       }
     }
-    deps = rebase_path([
-      "mojo/public/c/system:for_shared_library",
-    ], ".", mojo_root)
+    deps = [ "//mojo/public/c/system:for_shared_library" ]
     if (defined(invoker.deps)) {
       deps += invoker.deps
     }
@@ -176,7 +167,7 @@ if (is_android) {
     }
 
     action(target_name) {
-      script = rebase_path("mojo/public/tools/prepend.py", ".", mojo_root)
+      script = "//mojo/public/tools/prepend.py"
 
       input = zip_action_output
       inputs = [ input ]
