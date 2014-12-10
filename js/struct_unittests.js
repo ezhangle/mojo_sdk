@@ -156,14 +156,11 @@ define([
       // array<array<string, 2>, 1>>
       f5: new Map([["a", [["1", "2"]]]]),
       // map<string, Rect?>
-      /*
-      Disabled until the Java bindings work correctly.
       f6: new Map([["a", null]]),
       // map<string, map<string, string>>
       f7: new Map([["a", new Map([["b", "c"]])]]),
       // map<string, array<map<string, string>>>
       f8: new Map([["a", [new Map([["b", "c"]])]]]),
-      */
     });
     var decodedStruct = structEncodeDecode(mapFieldsStruct);
     expect(decodedStruct.f0).toEqual(mapFieldsStruct.f0);
@@ -172,12 +169,9 @@ define([
     expect(decodedStruct.f3).toEqual(mapFieldsStruct.f3);
     expect(decodedStruct.f4).toEqual(mapFieldsStruct.f4);
     expect(decodedStruct.f5).toEqual(mapFieldsStruct.f5);
-    /*
-    Disabled until the Java bindings work correctly.
     expect(decodedStruct.f6).toEqual(mapFieldsStruct.f6);
     expect(decodedStruct.f7).toEqual(mapFieldsStruct.f7);
     expect(decodedStruct.f8).toEqual(mapFieldsStruct.f8);
-    */
   }
 
   testConstructors();
