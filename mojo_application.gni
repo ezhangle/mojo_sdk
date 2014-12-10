@@ -170,9 +170,9 @@ if (is_android) {
     }
 
     if (defined(invoker.output_name)) {
-      mojo_output = "$target_out_dir/" + invoker.output_name + ".mojo"
+      mojo_output = "$root_out_dir/" + invoker.output_name + ".mojo"
     } else {
-      mojo_output = "$target_out_dir/" + target_name + ".mojo"
+      mojo_output = "$root_out_dir/" + target_name + ".mojo"
     }
 
     action(target_name) {
