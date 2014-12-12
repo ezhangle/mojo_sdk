@@ -174,11 +174,54 @@ define([
     expect(decodedStruct.f8).toEqual(mapFieldsStruct.f8);
   }
 
+  function testFloatNumberValues() {
+    var decodedStruct = structEncodeDecode(new testStructs.FloatNumberValues);
+    expect(decodedStruct.f0).toEqual(testStructs.FloatNumberValues.V0);
+    expect(decodedStruct.f1).toEqual(testStructs.FloatNumberValues.V1);
+    expect(decodedStruct.f2).toEqual(testStructs.FloatNumberValues.V2);
+    expect(decodedStruct.f3).toEqual(testStructs.FloatNumberValues.V3);
+    expect(decodedStruct.f4).toEqual(testStructs.FloatNumberValues.V4);
+    expect(decodedStruct.f5).toEqual(testStructs.FloatNumberValues.V5);
+    expect(decodedStruct.f6).toEqual(testStructs.FloatNumberValues.V6);
+    expect(decodedStruct.f7).toEqual(testStructs.FloatNumberValues.V7);
+    expect(decodedStruct.f8).toEqual(testStructs.FloatNumberValues.V8);
+    expect(decodedStruct.f9).toEqual(testStructs.FloatNumberValues.V9);
+  }
+
+  function testBitArrayValues() {
+    var bitArraysStruct = new testStructs.BitArrayValues({
+      // array<bool, 1> f0;
+      f0: [true],
+      // array<bool, 7> f1;
+      f1: [true, false, true, false, true, false, true],
+      // array<bool, 9> f2;
+      f2: [true, false, true, false, true, false, true, false, true],
+      // array<bool> f3;
+      f3: [true, false, true, false, true, false, true, false],
+      // array<array<bool>> f4;
+      f4: [[true], [false], [true, false], [true, false, true, false]],
+      // array<array<bool>?> f5;
+      f5: [[true], null, null, [true, false, true, false]],
+      // array<array<bool, 2>?> f6;
+      f6: [[true, false], [true, false], [true, false]],
+    });
+    var decodedStruct = structEncodeDecode(bitArraysStruct);
+    expect(decodedStruct.f0).toEqual(bitArraysStruct.f0);
+    expect(decodedStruct.f1).toEqual(bitArraysStruct.f1);
+    expect(decodedStruct.f2).toEqual(bitArraysStruct.f2);
+    expect(decodedStruct.f3).toEqual(bitArraysStruct.f3);
+    expect(decodedStruct.f4).toEqual(bitArraysStruct.f4);
+    expect(decodedStruct.f5).toEqual(bitArraysStruct.f5);
+    expect(decodedStruct.f6).toEqual(bitArraysStruct.f6);
+  }
+
   testConstructors();
   testNoDefaultFieldValues();
   testDefaultFieldValues();
   testScopedConstants();
   testMapKeyTypes();
   testMapValueTypes();
+  testFloatNumberValues();
+  testBitArrayValues();
   this.result = "PASS";
 });
