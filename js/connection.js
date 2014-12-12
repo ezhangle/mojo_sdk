@@ -107,7 +107,7 @@ define("mojo/public/js/connection", [
     }
     if (receiver instanceof routerModule.Router) {
       // TODO(hansmuller): Temporary, for Chrome backwards compatibility.
-      this.receiver_ = receiver;
+      proxy.receiver_ = receiver;
     } else if (receiver) {
       var router = new routerModule.Router(receiver);
       var stub = proxyInterface.client && new proxyInterface.client.stubClass;
