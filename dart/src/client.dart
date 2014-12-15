@@ -46,7 +46,9 @@ abstract class Client {
       if (core.MojoHandleSignals.isWritable(mojoSignal)) {
         if (_sendQueue.length > 0) {
           List messageCompleter = _sendQueue.removeAt(0);
-          _endpoint.write(messageCompleter[0].buffer);
+          _endpoint.write(messageCompleter[0].buffer,
+                          messageCompleter[0].buffer.lengthInBytes,
+                          messageCompleter[0].handles);
           if (!_endpoint.status.isOk) {
             throw new Exception("message pipe write failed");
           }
@@ -78,7 +80,7 @@ abstract class Client {
     builder.encodeStruct(t, msg);
     var message = builder.finish();
     _sendQueue.add([message, null]);
-    if ((_sendQueue.length > 0) && !_handle.writeEnabled()) {
+    if (!_handle.writeEnabled()) {
       _handle.enableWriteEvents();
     }
   }
@@ -91,7 +93,7 @@ abstract class Client {
 
     var completer = new Completer();
     _sendQueue.add([message, completer]);
-    if ((_sendQueue.length > 0) && !_handle.writeEnabled()) {
+    if (!_handle.writeEnabled()) {
       _handle.enableWriteEvents();
     }
     return completer.future;

@@ -8,15 +8,18 @@ abstract class Interface {
   core.MojoMessagePipeEndpoint _endpoint;
   core.MojoHandle _handle;
   List _sendQueue;
+  bool _isOpen;
 
   Message handleMessage(MessageReader reader, Function messageHandler);
 
   Interface(this._endpoint) {
     _sendQueue = [];
     _handle = new core.MojoHandle(_endpoint.handle);
+    _isOpen = false;
   }
 
   StreamSubscription<int> listen(Function messageHandler) {
+    _isOpen = true;
     return _handle.listen((int mojoSignal) {
       if (core.MojoHandleSignals.isReadable(mojoSignal)) {
         // Query how many bytes are available.
@@ -54,7 +57,9 @@ abstract class Interface {
       if (core.MojoHandleSignals.isWritable(mojoSignal)) {
         if (_sendQueue.length > 0) {
           var response_message = _sendQueue.removeAt(0);
-          _endpoint.write(response_message.buffer);
+          _endpoint.write(response_message.buffer,
+                          response_message.buffer.lengthInBytes,
+                          response_message.handles);
           if (!_endpoint.status.isOk) {
             throw new Exception("message pipe write failed");
           }
@@ -83,4 +88,20 @@ abstract class Interface {
     builder.encodeStruct(t, response);
     return builder.finish();
   }
+
+  void enqueueMessage(Type t, int name, Object msg) {
+    var builder = new MessageBuilder(name, align(getEncodedSize(t)));
+    builder.encodeStruct(t, msg);
+    var message = builder.finish();
+    _sendQueue.add(message);
+    if (!_handle.writeEnabled()) {
+      _handle.enableWriteEvents();
+    }
+  }
+
+  Future enqueueMessageWithRequestID(Type t, int name, int id, Object msg) {
+    throw new Exception("The client Mixin should not expect a response");
+  }
+
+  bool get isOpen => _isOpen;
 }
