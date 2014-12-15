@@ -8,6 +8,7 @@ define("mojo/public/js/codec", [
 ], function(unicode, buffer) {
 
   var kErrorUnsigned = "Passing negative value to unsigned";
+  var kErrorArray = "Passing non-array-like to array";
 
   // Memory -------------------------------------------------------------------
 
@@ -351,6 +352,9 @@ define("mojo/public/js/codec", [
       // Also handles undefined, since undefined == null.
       this.encodePointer(val);
       return;
+    }
+    if (val.length === undefined) {
+      throw new Error(kErrorArray);
     }
     var numberOfElements = val.length;
     var encodedSize = kArrayHeaderSize + ((cls === PackedBool) ?

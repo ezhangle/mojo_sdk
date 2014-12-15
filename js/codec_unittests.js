@@ -15,6 +15,7 @@ define([
   testTypes();
   testAlign();
   testUtf8();
+  testArrayPointerValidation();
   this.result = "PASS";
 
   function testBar() {
@@ -254,5 +255,19 @@ define([
     expect(reader.messageName).toBe(messageName);
     var str2 = reader.decoder.decodeStringPointer();
     expect(str2).toEqual(str);
+  }
+
+  function testArrayPointerValidation() {
+    function DummyClass() {};
+    var builder = new codec.MessageBuilder(42, 24);
+    var encoder = builder.createEncoder(8);
+    expect(function() {
+      // Pass something that is not an array it should throw.
+      encoder.encodeArrayPointer(DummyClass, 75);
+    }).toThrow();
+
+    // An empty array or null should do nothing and be fine.
+    encoder.encodeArrayPointer(DummyClass, []);
+    encoder.encodeArrayPointer(DummyClass, null);
   }
 });
