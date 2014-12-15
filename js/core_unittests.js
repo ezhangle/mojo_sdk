@@ -15,6 +15,8 @@ define([
   runWithDataPipe(testReadAndWriteDataPipe);
   runWithDataPipeWithOptions(testNop);
   runWithDataPipeWithOptions(testReadAndWriteDataPipe);
+  runWithMessagePipe(testIsHandleMessagePipe);
+  runWithDataPipe(testIsHandleDataPipe);
   gc.collectGarbage();  // should not crash
   this.result = "PASS";
 
@@ -123,6 +125,23 @@ define([
     var memory = new Uint8Array(read.buffer);
     for (var i = 0; i < memory.length; ++i)
       expect(memory[i]).toBe((i * i) & 0xFF);
+  }
+
+  function testIsHandleMessagePipe(pipe) {
+    expect(core.isHandle(123).toBeFalsy);
+    expect(core.isHandle("123").toBeFalsy);
+    expect(core.isHandle({}).toBeFalsy);
+    expect(core.isHandle([]).toBeFalsy);
+    expect(core.isHandle(undefined).toBeFalsy);
+    expect(core.isHandle(pipe).toBeFalsy);
+    expect(core.isHandle(pipe.handle0)).toBeTruthy();
+    expect(core.isHandle(pipe.handle1)).toBeTruthy();
+    expect(core.isHandle(null)).toBeTruthy();
+  }
+
+  function testIsHandleDataPipe(pipe) {
+    expect(core.isHandle(pipe.consumerHandle)).toBeTruthy();
+    expect(core.isHandle(pipe.producerHandle)).toBeTruthy();
   }
 
 });
