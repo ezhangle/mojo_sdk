@@ -371,7 +371,7 @@ define("mojo/public/js/codec", [
       this.encodePointer(val);
       return;
     }
-    // This only accepts string literals, not objects like new String("foo").
+    // Only accepts string primivites, not String Objects like new String("foo")
     if (typeof(val) !== "string") {
       throw new Error(kErrorString);
     }
