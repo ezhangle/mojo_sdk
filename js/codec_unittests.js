@@ -15,7 +15,7 @@ define([
   testTypes();
   testAlign();
   testUtf8();
-  testArrayPointerValidation();
+  testTypedPointerValidation();
   this.result = "PASS";
 
   function testBar() {
@@ -257,17 +257,35 @@ define([
     expect(str2).toEqual(str);
   }
 
-  function testArrayPointerValidation() {
+  function testTypedPointerValidation() {
+    var encoder = new codec.MessageBuilder(42, 24).createEncoder(8);
     function DummyClass() {};
-    var builder = new codec.MessageBuilder(42, 24);
-    var encoder = builder.createEncoder(8);
-    expect(function() {
-      // Pass something that is not an array it should throw.
-      encoder.encodeArrayPointer(DummyClass, 75);
-    }).toThrow();
+    var testCases = [
+      // method, args, invalid examples, valid examples
+      [encoder.encodeArrayPointer, [DummyClass], [75], [[], null, undefined]],
+      [encoder.encodeStringPointer, [], [75, new String("foo")],
+          ["", "bar", null, undefined]],
+      [encoder.encodeMapPointer, [DummyClass, DummyClass], [75],
+          [new Map(), null, undefined]],
+    ];
 
-    // An empty array or null should do nothing and be fine.
-    encoder.encodeArrayPointer(DummyClass, []);
-    encoder.encodeArrayPointer(DummyClass, null);
+    testCases.forEach(function(test) {
+      var method = test[0];
+      var baseArgs = test[1];
+      var invalidExamples = test[2];
+      var validExamples = test[3];
+
+      var encoder = new codec.MessageBuilder(42, 24).createEncoder(8);
+      invalidExamples.forEach(function(invalid) {
+        expect(function() {
+          method.apply(encoder, baseArgs.concat(invalid));
+        }).toThrow();
+      });
+
+      validExamples.forEach(function(valid) {
+        var encoder = new codec.MessageBuilder(42, 24).createEncoder(8);
+        method.apply(encoder, baseArgs.concat(valid));
+      });
+    });
   }
 });

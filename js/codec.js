@@ -8,7 +8,9 @@ define("mojo/public/js/codec", [
 ], function(unicode, buffer) {
 
   var kErrorUnsigned = "Passing negative value to unsigned";
-  var kErrorArray = "Passing non-array-like to array";
+  var kErrorArray = "Passing non Array for array type";
+  var kErrorString = "Passing non String for string type";
+  var kErrorMap = "Passing non Map for map type";
 
   // Memory -------------------------------------------------------------------
 
@@ -353,7 +355,7 @@ define("mojo/public/js/codec", [
       this.encodePointer(val);
       return;
     }
-    if (val.length === undefined) {
+    if (!(val instanceof Array)) {
       throw new Error(kErrorArray);
     }
     var numberOfElements = val.length;
@@ -368,6 +370,10 @@ define("mojo/public/js/codec", [
       // Also handles undefined, since undefined == null.
       this.encodePointer(val);
       return;
+    }
+    // This only accepts string literals, not objects like new String("foo").
+    if (typeof(val) !== "string") {
+      throw new Error(kErrorString);
     }
     var encodedSize = kArrayHeaderSize + unicode.utf8Length(val);
     var encoder = this.createAndEncodeEncoder(encodedSize);
@@ -393,6 +399,9 @@ define("mojo/public/js/codec", [
       // Also handles undefined, since undefined == null.
       this.encodePointer(val);
       return;
+    }
+    if (!(val instanceof Map)) {
+      throw new Error(kErrorMap);
     }
     var encodedSize = kStructHeaderSize + kMapStructPayloadSize;
     var encoder = this.createAndEncodeEncoder(encodedSize);
