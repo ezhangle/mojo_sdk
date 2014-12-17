@@ -85,9 +85,10 @@ abstract class Client {
     }
   }
 
-  Future enqueueMessageWithRequestID(Type t, int name, int id, Object msg) {
+  Future enqueueMessageWithRequestID(
+      Type t, int name, int id, int flags, Object msg) {
     var builder = new MessageWithRequestIDBuilder(
-        name, align(getEncodedSize(t)), id);
+        name, align(getEncodedSize(t)), id, flags);
     builder.encodeStruct(t, msg);
     var message = builder.finish();
 
