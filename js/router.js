@@ -4,11 +4,14 @@
 
 define("mojo/public/js/router", [
   "mojo/public/js/codec",
+  "mojo/public/js/core",
   "mojo/public/js/connector",
   "mojo/public/js/validator",
-], function(codec, connector, validator) {
+], function(codec, coreModule, connector, validator) {
 
   function Router(handle, connectorFactory) {
+    if (!coreModule.isHandle(handle))
+      throw new Error("Router constructor: Not a handle");
     if (connectorFactory === undefined)
       connectorFactory = connector.Connector;
     this.connector_ = new connectorFactory(handle);
