@@ -6,7 +6,11 @@ define("mojo/public/js/connection", [
   "mojo/public/js/connector",
   "mojo/public/js/core",
   "mojo/public/js/router",
-], function(connector, coreModule, routerModule) {
+], function(connector, core, router) {
+
+  var Router = router.Router;
+  var TestConnector = connector.TestConnector;
+  var TestRouter = router.TestRouter;
 
   // TODO(hansmuller): the proxy receiver_ property should be receiver$
 
@@ -43,7 +47,7 @@ define("mojo/public/js/connection", [
 
   function Connection(
       handle, localFactory, remoteFactory, routerFactory, connectorFactory) {
-    var routerClass = routerFactory || routerModule.Router;
+    var routerClass = routerFactory || Router;
     var router = new routerClass(handle, connectorFactory);
     var remoteProxy = remoteFactory && new remoteFactory(router);
     var localStub = localFactory && new localFactory(remoteProxy);
@@ -58,8 +62,8 @@ define("mojo/public/js/connection", [
                     handle,
                     localFactory,
                     remoteFactory,
-                    routerModule.TestRouter,
-                    connector.TestConnector);
+                    TestRouter,
+                    TestConnector);
   }
 
   TestConnection.prototype = Object.create(Connection.prototype);
@@ -80,7 +84,7 @@ define("mojo/public/js/connection", [
       }
     });
     // TODO(hansmuller): Temporary, for Chrome backwards compatibility.
-    if (receiver instanceof routerModule.Router)
+    if (receiver instanceof Router)
       proxy.receiver_ = receiver;
   }
 
@@ -97,7 +101,7 @@ define("mojo/public/js/connection", [
     var stub = stubClass &&
         (clientImpl ? new stubClass(clientImpl) : new stubClass);
     var proxy = proxyClass ? new proxyClass : createEmptyProxy();
-    var router = new routerModule.Router(messagePipeHandle);
+    var router = new Router(messagePipeHandle);
     var connection = new BaseConnection(stub, proxy, router);
     proxy.connection$ = connection;
     if (clientImpl) {
@@ -109,8 +113,8 @@ define("mojo/public/js/connection", [
 
   // Return a message pipe handle.
   function bindProxyClient(clientImpl, localInterface, remoteInterface) {
-    var messagePipe = coreModule.createMessagePipe();
-    if (messagePipe.result != coreModule.RESULT_OK)
+    var messagePipe = core.createMessagePipe();
+    if (messagePipe.result != core.RESULT_OK)
       throw new Error("createMessagePipe failed " + messagePipe.result);
 
     createOpenConnection(
@@ -120,7 +124,7 @@ define("mojo/public/js/connection", [
 
   // Return a proxy.
   function bindProxyHandle(proxyHandle, localInterface, remoteInterface) {
-    if (!coreModule.isHandle(proxyHandle))
+    if (!core.isHandle(proxyHandle))
       throw new Error("Not a handle " + proxyHandle);
 
     var connection = createOpenConnection(
