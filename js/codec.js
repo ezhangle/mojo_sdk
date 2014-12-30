@@ -355,10 +355,11 @@ define("mojo/public/js/codec", [
       this.encodePointer(val);
       return;
     }
-    if (!(val instanceof Array)) {
-      throw new Error(kErrorArray);
-    }
+
     var numberOfElements = val.length;
+    if (!Number.isSafeInteger(numberOfElements) || numberOfElements < 0)
+      throw new Error(kErrorArray);
+
     var encodedSize = kArrayHeaderSize + ((cls === PackedBool) ?
         Math.ceil(numberOfElements / 8) : cls.encodedSize * numberOfElements);
     var encoder = this.createAndEncodeEncoder(encodedSize);
