@@ -189,7 +189,9 @@ define([
   }
 
   function testIntegerNumberValues() {
-    var decodedStruct = structEncodeDecode(new testStructs.IntegerNumberValues);
+    var minInt32 = -2147483648; // See crbug.com/445618
+    var decodedStruct = structEncodeDecode(
+      new testStructs.IntegerNumberValues({f10: minInt32}));
     expect(decodedStruct.f0).toEqual(testStructs.IntegerNumberValues.V0);
     expect(decodedStruct.f1).toEqual(testStructs.IntegerNumberValues.V1);
     expect(decodedStruct.f2).toEqual(testStructs.IntegerNumberValues.V2);
@@ -200,7 +202,7 @@ define([
     expect(decodedStruct.f7).toEqual(testStructs.IntegerNumberValues.V7);
     expect(decodedStruct.f8).toEqual(testStructs.IntegerNumberValues.V8);
     expect(decodedStruct.f9).toEqual(testStructs.IntegerNumberValues.V9);
-    expect(decodedStruct.f10).toEqual(testStructs.IntegerNumberValues.V10);
+    expect(decodedStruct.f10).toEqual(minInt32);
     expect(decodedStruct.f11).toEqual(testStructs.IntegerNumberValues.V11);
     expect(decodedStruct.f12).toEqual(testStructs.IntegerNumberValues.V12);
     expect(decodedStruct.f13).toEqual(testStructs.IntegerNumberValues.V13);

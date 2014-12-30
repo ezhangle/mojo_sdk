@@ -263,7 +263,7 @@ define([
     var testCases = [
       // method, args, invalid examples, valid examples
       [encoder.encodeArrayPointer, [DummyClass], [75],
-          [[], null, undefined, new Uint8Array([])]]],
+          [[], null, undefined, new Uint8Array([])]],
       [encoder.encodeStringPointer, [], [75, new String("foo")],
           ["", "bar", null, undefined]],
       [encoder.encodeMapPointer, [DummyClass, DummyClass], [75],
