@@ -131,12 +131,30 @@ class MojoHandleSignals {
   static bool isReadWrite(int mask) => (mask & READWRITE) == READWRITE;
   static int toggleWrite(int mask) =>
     isWritable(mask) ? (mask & ~WRITABLE) : (mask | WRITABLE);
+  static bool isPeerClosed(int mask) => (mask & PEER_CLOSED) == PEER_CLOSED;
 }
 
 
 class MojoHandleSignalsState {
-  const MojoHandleSignalsState(this.satisfied_signals,
-                               this.satisfiable_signals);
+  MojoHandleSignalsState(this.satisfied_signals,
+                         this.satisfiable_signals);
+
   final int satisfied_signals;
   final int satisfiable_signals;
+}
+
+class MojoWaitResult {
+  MojoWaitResult(this.result, this.state);
+  final MojoResult result;
+  MojoHandleSignalsState state;
+}
+
+class MojoWaitManyResult {
+  MojoWaitManyResult(this.result, this.index, this.states);
+  final MojoResult result;
+  final int index;
+  List<MojoHandleSignalsState> states;
+  
+  bool get isIndexValid => (this.index != null);
+  bool get areSignalStatesValid => (this.states != null);
 }

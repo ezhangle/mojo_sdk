@@ -99,21 +99,21 @@ class MojoHandleWatcher {
     MojoHandleWatcher watcher = new MojoHandleWatcher(consumerHandle);
     while (!watcher._shutdown) {
       int deadline = watcher._processTimerDeadlines();
-      int res = RawMojoHandle.waitMany(watcher._handles,
+      MojoWaitManyResult res = RawMojoHandle.waitMany(watcher._handles,
                                        watcher._signals,
                                        deadline);
-      if (res == 0) {
+      if (res.result.isOk && res.index == 0) {
         watcher._handleControlMessage();
-      } else if (res > 0) {
-        int handle = watcher._handles[res];
+      } else if (res.result.isOk && res.index > 0) {
+        int handle = watcher._handles[res.index];
         // Route event.
-        watcher._routeEvent(res);
+        watcher._routeEvent(res.index);
         // Remove the handle from the list.
         watcher._removeHandle(handle);
-      } else if (res != MojoResult.kDeadlineExceeded) {
+      } else if (res.areSignalStatesValid) {
         // Some handle was closed, but not by us.
-        // We have to go through the list and find it.
-        watcher._pruneClosedHandles();
+        // Find it and close it on our side.
+        watcher._pruneClosedHandles(res.states);
       }
     }
   }
@@ -255,19 +255,18 @@ class MojoHandleWatcher {
     _signals[idx] = MojoHandleSignals.toggleWrite(_signals[idx]);
   }
 
-  void _pruneClosedHandles() {
+  void _pruneClosedHandles(List<MojoHandleSignalsState> states) {
     List<int> closed = new List();
-    for (var h in _handles) {
-      _tempHandle.h = h;
-      MojoResult res = _tempHandle.wait(MojoHandleSignals.READWRITE, 0);
-      if ((!res.isOk) && (!res.isDeadlineExceeded)) {
-        closed.add(h);
+    for (var i=0; i<_handles.length; i++) {
+      if (MojoHandleSignals.isPeerClosed(states[i].satisfied_signals)) {
+        closed.add(_handles[i]);
       }
-      _tempHandle.h = RawMojoHandle.INVALID;
     }
     for (var h in closed) {
-      _close(h, pruning: true);
+      _close(h, pruning: true);  
     }
+    // '_close' updated the '_handles' array, so at this point the '_handles'
+    // array and the caller's 'states' array are mismatched.
   }
 
   void _shutdownHandleWatcher() {

@@ -7,10 +7,10 @@ part of core;
 class _MojoHandleNatives {
   static int register(MojoHandle handle) native "MojoHandle_Register";
   static int close(int handle) native "MojoHandle_Close";
-  static int wait(int handle, int signals, int deadline)
+  static List wait(int handle, int signals, int deadline)
       native "MojoHandle_Wait";
-  static int waitMany(
-      List<int> handles, List<int> signals, int num_handles, int deadline)
+  static List waitMany(
+      List<int> handles, List<int> signals, int deadline)
       native "MojoHandle_WaitMany";
 }
 
@@ -29,14 +29,14 @@ class RawMojoHandle {
     return new MojoResult(result);
   }
 
-  MojoResult wait(int signals, int deadline) {
-    int result = _MojoHandleNatives.wait(h, signals, deadline);
-    return new MojoResult(result);
+  MojoWaitResult wait(int signals, int deadline) {
+    List result = _MojoHandleNatives.wait(h, signals, deadline);
+    return new MojoWaitResult(new MojoResult(result[0]), result[1]);
   }
 
   bool _ready(int signal) {
-    MojoResult res = wait(signal, 0);
-    switch (res) {
+    MojoWaitResult res = wait(signal, 0);
+    switch (res.result) {
       case MojoResult.OK:
         return true;
       case MojoResult.DEADLINE_EXCEEDED:
@@ -53,14 +53,14 @@ class RawMojoHandle {
   bool readyRead() => _ready(MojoHandleSignals.READABLE);
   bool readyWrite() => _ready(MojoHandleSignals.WRITABLE);
 
-  static int waitMany(List<int> handles,
-                      List<int> signals,
-                      int deadline) {
-    if (handles.length != signals.length) {
-      return MojoResult.kInvalidArgument;
-    }
-    return _MojoHandleNatives.waitMany(
-        handles, signals, handles.length, deadline);
+  static MojoWaitManyResult waitMany(List<int> handles,
+                                     List<int> signals,
+                                     int deadline) {
+    List result = _MojoHandleNatives.waitMany(
+        handles, signals, deadline);
+        
+    return new MojoWaitManyResult(
+        new MojoResult(result[0]), result[1], result[2]);
   }
 
   static MojoResult register(MojoHandle handle) {
