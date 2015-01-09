@@ -69,7 +69,7 @@ int getEncodedSize(Object typeOrInstance) {
 
 class MojoDecoder {
   ByteData buffer;
-  List<core.RawMojoHandle> handles;
+  List<core.MojoHandle> handles;
   int base;
   int next;
 
@@ -154,10 +154,10 @@ class MojoDecoder {
     return new MojoDecoder(buffer, handles, offset);
   }
 
-  core.RawMojoHandle decodeHandle() {
+  core.MojoHandle decodeHandle() {
     int handleIndex = readUint32();
     return (handleIndex == kEncodedInvalidHandleValue) ?
-           new core.RawMojoHandle(core.RawMojoHandle.INVALID) :
+           new core.MojoHandle(core.MojoHandle.INVALID) :
            handles[handleIndex];
   }
 
@@ -240,7 +240,7 @@ class MojoDecoder {
 
 class MojoEncoder {
   ByteData buffer;
-  List<core.RawMojoHandle> handles;
+  List<core.MojoHandle> handles;
   int base;
   int next;
   int extent;
@@ -347,7 +347,7 @@ class MojoEncoder {
     return new MojoEncoder(buffer, handles, pointer, extent);
   }
 
-  void encodeHandle(core.RawMojoHandle handle) {
+  void encodeHandle(core.MojoHandle handle) {
     if (handle.isValid) {
       handles.add(handle);
       writeUint32(handles.length - 1);
@@ -466,33 +466,37 @@ const int kMessageIsResponse = 1 << 1;
 
 class Message {
   ByteData buffer;
-  List<core.RawMojoHandle> handles;
+  List<core.MojoHandle> handles;
 
   Message(this.buffer, this.handles);
 
-  int getHeaderNumBytes() => buffer.getUint32(kStructHeaderNumBytesOffset);
-  int getHeaderNumFields() => buffer.getUint32(kStructHeaderNumFieldsOffset);
-  int getName() => buffer.getUint32(kMessageNameOffset);
-  int getFlags() => buffer.getUint32(kMessageFlagsOffset);
-  bool isResponse() => (getFlags() & kMessageIsResponse) != 0;
-  bool expectsResponse() => (getFlags() & kMessageExpectsResponse) != 0;
-
-  void setRequestID(int id) {
-    buffer.setUint64(kMessageRequestIDOffset, id);
-  }
+  int get headerNumBytes =>
+      buffer.getUint32(kStructHeaderNumBytesOffset, Endianness.LITTLE_ENDIAN);
+  int get headerNumFields =>
+      buffer.getUint32(kStructHeaderNumFieldsOffset, Endianness.LITTLE_ENDIAN);
+  int get name =>
+      buffer.getUint32(kMessageNameOffset, Endianness.LITTLE_ENDIAN);
+  int get flags =>
+      buffer.getUint32(kMessageFlagsOffset, Endianness.LITTLE_ENDIAN);
+  int get requestID =>
+      buffer.getUint64(kMessageRequestIDOffset, Endianness.LITTLE_ENDIAN);
+      set requestID(int id) =>
+      buffer.setUint64(kMessageRequestIDOffset, id, Endianness.LITTLE_ENDIAN);
+  bool get isResponse => (flags & kMessageIsResponse) != 0;
+  bool get expectsResponse => (flags & kMessageExpectsResponse) != 0;
 }
 
 
 class MessageBuilder {
   MojoEncoder encoder;
-  List<core.RawMojoHandle> handles;
+  List<core.MojoHandle> handles;
 
   MessageBuilder._();
 
   MessageBuilder(int name, int payloadSize) {
     int numBytes = kMessageHeaderSize + payloadSize;
     var buffer = new ByteData(numBytes);
-    handles = <core.RawMojoHandle>[];
+    handles = <core.MojoHandle>[];
 
     encoder = new MojoEncoder(buffer, handles, 0, kMessageHeaderSize);
     encoder.writeUint32(kMessageHeaderSize);
@@ -533,7 +537,7 @@ class MessageWithRequestIDBuilder extends MessageBuilder {
       : super._() {
     int numBytes = kMessageWithRequestIDHeaderSize + payloadSize;
     var buffer = new ByteData(numBytes);
-    handles = <core.RawMojoHandle>[];
+    handles = <core.MojoHandle>[];
 
     encoder = new MojoEncoder(
         buffer, handles, 0, kMessageWithRequestIDHeaderSize);
@@ -735,9 +739,9 @@ class NullableArrayOf extends ArrayOf {
 
 class Handle {
   static const int encodedSize = 4;
-  static core.RawMojoHandle decode(MojoDecoder decoder) =>
+  static core.MojoHandle decode(MojoDecoder decoder) =>
       decoder.decodeHandle();
-  static void encode(MojoEncoder encoder, core.RawMojoHandle val) {
+  static void encode(MojoEncoder encoder, core.MojoHandle val) {
     encoder.encodeHandle(val);
   }
 }
