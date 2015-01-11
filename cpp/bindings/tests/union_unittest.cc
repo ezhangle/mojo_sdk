@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "mojo/public/cpp/bindings/lib/fixed_buffer.h"
+#include "mojo/public/cpp/bindings/string.h"
 #include "mojo/public/cpp/environment/environment.h"
 #include "mojo/public/interfaces/bindings/tests/test_unions.mojom.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -115,6 +116,57 @@ TEST(UnionTest, SerializationPod) {
   EXPECT_EQ(10, pod2->get_f_int8());
   EXPECT_TRUE(pod2->is_f_int8());
   EXPECT_EQ(pod2->which(), PodUnion::Tag::F_INT8);
+}
+
+TEST(UnionTest, StringGetterSetter) {
+  PodUnionPtr pod(PodUnion::New());
+
+  String hello("hello world");
+  pod->set_f_string(hello);
+  EXPECT_EQ(hello, pod->get_f_string());
+  EXPECT_TRUE(pod->is_f_string());
+  EXPECT_EQ(pod->which(), PodUnion::Tag::F_STRING);
+}
+
+TEST(UnionTest, StringEquals) {
+  PodUnionPtr pod1(PodUnion::New());
+  PodUnionPtr pod2(PodUnion::New());
+
+  pod1->set_f_string("hello world");
+  pod2->set_f_string("hello world");
+  EXPECT_TRUE(pod1.Equals(pod2));
+
+  pod2->set_f_string("hello universe");
+  EXPECT_FALSE(pod1.Equals(pod2));
+}
+
+TEST(UnionTest, StringClone) {
+  PodUnionPtr pod(PodUnion::New());
+
+  String hello("hello world");
+  pod->set_f_string(hello);
+  PodUnionPtr pod_clone = pod.Clone();
+  EXPECT_EQ(hello, pod_clone->get_f_string());
+  EXPECT_TRUE(pod_clone->is_f_string());
+  EXPECT_EQ(pod_clone->which(), PodUnion::Tag::F_STRING);
+}
+
+TEST(UnionTest, StringSerialization) {
+  PodUnionPtr pod1(PodUnion::New());
+
+  String hello("hello world");
+  pod1->set_f_string(hello);
+
+  size_t size = GetSerializedSize_(pod1);
+  mojo::internal::FixedBuffer buf(size);
+  internal::PodUnion_Data* data;
+  Serialize_(pod1.Pass(), &buf, &data);
+
+  PodUnionPtr pod2;
+  Deserialize_(data, &pod2);
+  EXPECT_EQ(hello, pod2->get_f_string());
+  EXPECT_TRUE(pod2->is_f_string());
+  EXPECT_EQ(pod2->which(), PodUnion::Tag::F_STRING);
 }
 }  // namespace test
 }  // namespace mojo
