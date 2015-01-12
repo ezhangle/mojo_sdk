@@ -12,7 +12,7 @@ abstract class Client {
   bool _isOpen = false;
   int _nextId = 0;
 
-  void handleResponse(MessageReader reader);
+  void handleResponse(ServiceMessage reader);
 
   Client(core.MojoMessagePipeEndpoint endpoint) :
       _sendQueue = [],
@@ -38,16 +38,14 @@ abstract class Client {
     var handles = new List<core.MojoHandle>(result.handlesRead);
     result = _endpoint.read(bytes, result.bytesRead, handles);
     assert(result.status.isOk || result.status.isResourceExhausted);
-    var message = new Message(bytes, handles);
-    var reader = new MessageReader(message);
-
-    handleResponse(reader);
+    var message = new ServiceMessage.fromMessage(new Message(bytes, handles));
+    handleResponse(message);
   }
 
   void _doWrite() {
     if (_sendQueue.length > 0) {
       List messageCompleter = _sendQueue.removeAt(0);
-      Message message = messageCompleter[0];
+      ServiceMessage message = messageCompleter[0];
       Completer completer = messageCompleter[1];
       _endpoint.write(message.buffer,
                       message.buffer.lengthInBytes,
@@ -56,14 +54,14 @@ abstract class Client {
         throw "message pipe write failed";
       }
       if (completer != null) {
-        if (!message.expectsResponse) {
+        if (!message.header.hasRequestId) {
           throw "Message has a completer, but does not expect a response";
         }
-        int requestID = message.requestID;
-        if (_completerMap[requestID] != null) {
-          throw "Request ID $requestID is already in use.";
+        int requestId = message.header.requestId;
+        if (_completerMap[requestId] != null) {
+          throw "Request Id $requestId is already in use.";
         }
-        _completerMap[requestID] = completer;
+        _completerMap[requestId] = completer;
       }
     }
   }
@@ -103,11 +101,10 @@ abstract class Client {
     }
   }
 
-  void enqueueMessage(Type t, int name, Object msg) {
-    var builder = new MessageBuilder(name, align(getEncodedSize(t)));
-    builder.encodeStruct(t, msg);
-    var message = builder.finish();
-    _sendQueue.add([message, null]);
+  void enqueueMessage(Struct message, int name) {
+    var header = new MessageHeader(name);
+    var serviceMessage = message.serializeWithHeader(header);
+    _sendQueue.add([serviceMessage, null]);
     if (_sendQueue.length == 1) {
       _eventStream.enableAllEvents();
     }
@@ -117,19 +114,16 @@ abstract class Client {
     return _nextId++;
   }
 
-  Future enqueueMessageWithRequestID(
-      Type t, int name, int id, int flags, Object msg) {
+  Future enqueueMessageWithRequestId(
+      Struct message, int name, int id, int flags) {
     if (id == -1) {
       id = _getNextId();
     }
 
-    var builder = new MessageWithRequestIDBuilder(
-        name, align(getEncodedSize(t)), id, flags);
-    builder.encodeStruct(t, msg);
-    var message = builder.finish();
-
+    var header = new MessageHeader.withRequestId(name, flags, id);
+    var serviceMessage = message.serializeWithHeader(header);
     var completer = new Completer();
-    _sendQueue.add([message, completer]);
+    _sendQueue.add([serviceMessage, completer]);
     if (_sendQueue.length == 1) {
       _eventStream.enableAllEvents();
     } else {

@@ -10,7 +10,7 @@ abstract class Interface {
   List _sendQueue;
   bool _isOpen;
 
-  Future<Message> handleMessage(MessageReader reader);
+  Future<Message> handleMessage(ServiceMessage message);
 
   Interface(core.MojoMessagePipeEndpoint endpoint) :
       _endpoint = endpoint,
@@ -38,11 +38,10 @@ abstract class Interface {
     var handles = new List<core.MojoHandle>(result.handlesRead);
     result = _endpoint.read(bytes, result.bytesRead, handles);
     assert(result.status.isOk || result.status.isResourceExhausted);
-    var message = new Message(bytes, handles);
-    var reader = new MessageReader(message);
 
     // Prepare the response.
-    var responseFuture = handleMessage(reader);
+    var message = new ServiceMessage.fromMessage(new Message(bytes, handles));
+    var responseFuture = handleMessage(message);
 
     // If there's a response, queue it up for sending.
     if (responseFuture != null) {
@@ -104,29 +103,24 @@ abstract class Interface {
     }
   }
 
-  Message buildResponse(Type t, int name, Object response) {
-    var builder = new MessageBuilder(name, align(getEncodedSize(t)));
-    builder.encodeStruct(t, response);
-    return builder.finish();
+  Message buildResponse(Struct response, int name) {
+    var header = new MessageHeader(name);
+    return response.serializeWithHeader(header);
   }
 
-  Message buildResponseWithID(
-      Type t, int name, int id, int flags, Object response) {
-    var builder = new MessageWithRequestIDBuilder(
-        name, align(getEncodedSize(t)), id, flags);
-    builder.encodeStruct(t, response);
-    return builder.finish();
+  Message buildResponseWithId(Struct response, int name, int id, int flags) {
+    var header = new MessageHeader.withRequestId(name, flags, id);
+    return response.serializeWithHeader(header);
   }
 
-  void enqueueMessage(Type t, int name, Object msg) {
-    var builder = new MessageBuilder(name, align(getEncodedSize(t)));
-    builder.encodeStruct(t, msg);
-    var message = builder.finish();
-    _sendQueue.add(message);
+  void enqueueMessage(Struct message, int name) {
+    var header = new MessageHeader(name);
+    var serviceMessage = message.serializeWithHeader(header);
+    _sendQueue.add(serviceMessage);
     _eventStream.enableWriteEvents();
   }
 
-  Future enqueueMessageWithRequestID(Type t, int name, int id, Object msg) {
+  Future enqueueMessageWithRequestId(Struct response, int name, int id) {
     // TODO(zra): Is this correct?
     throw "The client interface should not expect a response";
   }

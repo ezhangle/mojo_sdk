@@ -251,10 +251,10 @@ class MojoHandleWatcher {
           closed.add(_handles[i]);
         }
       } else {
-        _tempHandle.h = h;
-        MojoResult res = _tempHandle.wait(MojoHandleSignals.kReadWrite, 0);
-        if ((!res.isOk) && (!res.isDeadlineExceeded)) {
-          closed.add(h);
+        _tempHandle.h = _handles[i];
+        MojoWaitResult mwr = _tempHandle.wait(MojoHandleSignals.kReadWrite, 0);
+        if ((!mwr.result.isOk) && (!mwr.result.isDeadlineExceeded)) {
+          closed.add(_handles[i]);
         }
         _tempHandle.h = MojoHandle.INVALID;
       }
