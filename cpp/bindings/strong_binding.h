@@ -36,6 +36,13 @@ namespace mojo {
 //     StrongBinding<Foo> binding_;
 //   };
 //
+//   class MyFooFactory : public InterfaceFactory<Foo> {
+//    public:
+//     void Create(..., InterfaceRequest<Foo> request) override {
+//       new StronglyBound(request.Pass());  // The binding now owns the
+//                                           // instance of StronglyBound.
+//     }
+//   };
 template <typename Interface>
 class StrongBinding : public ErrorHandler {
  public:
