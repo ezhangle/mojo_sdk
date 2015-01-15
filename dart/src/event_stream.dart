@@ -122,17 +122,36 @@ class MojoEventStream extends Stream<int> {
 class MojoEventStreamListener {
   MojoMessagePipeEndpoint _endpoint;
   MojoEventStream _eventStream;
-  bool _isOpen;
-  bool _isInHandler;
+  bool _isOpen = false;
+  bool _isInHandler = false;
 
   MojoEventStreamListener(MojoMessagePipeEndpoint endpoint) :
       _endpoint = endpoint,
       _eventStream = new MojoEventStream(endpoint.handle),
       _isOpen = false;
 
-  MojoEventStreamListener.fromHandle(int handle) {
-    _endpoint = new MojoMessagePipeEndpoint(new MojoHandle(handle));
-    _eventStream = new MojoEventStream(_endpoint.handle);
+  MojoEventStreamListener.fromHandle(MojoHandle handle) {
+    _endpoint = new MojoMessagePipeEndpoint(handle);
+    _eventStream = new MojoEventStream(handle);
+    _isOpen = false;
+  }
+
+  MojoEventStreamListener.unbound() :
+      _endpoint = null,
+      _eventStream = null,
+      _isOpen = false;
+
+  void bind(MojoMessagePipeEndpoint endpoint) {
+    assert(!isBound);
+    _endpoint = endpoint;
+    _eventStream = new MojoEventStream(endpoint.handle);
+    _isOpen = false;
+  }
+
+  void bindFromHandle(MojoHandle handle) {
+    assert(!isBound);
+    _endpoint = new MojoMessagePipeEndpoint(handle);
+    _eventStream = new MojoEventStream(handle);
     _isOpen = false;
   }
 
@@ -168,6 +187,7 @@ class MojoEventStreamListener {
       _eventStream.close();
       _isOpen = false;
       _eventStream = null;
+      _endpoint = null;
     }
   }
 
@@ -183,4 +203,5 @@ class MojoEventStreamListener {
   MojoMessagePipeEndpoint get endpoint => _endpoint;
   bool get isOpen => _isOpen;
   bool get isInHandler => _isInHandler;
+  bool get isBound => _endpoint != null;
 }

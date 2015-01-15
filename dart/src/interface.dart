@@ -10,7 +10,9 @@ abstract class Interface extends core.MojoEventStreamListener {
 
   Interface(core.MojoMessagePipeEndpoint endpoint) : super(endpoint);
 
-  Interface.fromHandle(int handle) : super.fromHandle(handle);
+  Interface.fromHandle(core.MojoHandle handle) : super.fromHandle(handle);
+
+  Interface.unbound() : super.unbound();
 
   Future<Message> handleMessage(ServiceMessage message);
 
@@ -91,7 +93,7 @@ abstract class Interface extends core.MojoEventStreamListener {
                     serviceMessage.buffer.lengthInBytes,
                     serviceMessage.handles);
     if (!endpoint.status.isOk) {
-      throw "message pipe write failed";
+      throw "message pipe write failed: ${endpoint.status}";
     }
   }
 

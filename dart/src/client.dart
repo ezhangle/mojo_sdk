@@ -12,9 +12,13 @@ abstract class Client extends core.MojoEventStreamListener {
       _completerMap = {},
       super(endpoint);
 
-  Client.fromHandle(int handle) :
+  Client.fromHandle(core.MojoHandle handle) :
       _completerMap = {},
       super.fromHandle(handle);
+
+  Client.unbound() :
+      _completerMap = {},
+      super.unbound();
 
   void handleResponse(ServiceMessage reader);
 
