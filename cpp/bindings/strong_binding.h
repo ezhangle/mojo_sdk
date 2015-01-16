@@ -105,6 +105,7 @@ class StrongBinding : public ErrorHandler {
     error_handler_ = error_handler;
   }
 
+  Interface* impl() { return binding_.impl(); }
   typename Interface::Client* client() { return binding_.client(); }
   // Exposed for testing, should not generally be used.
   internal::Router* internal_router() { return binding_.internal_router(); }
