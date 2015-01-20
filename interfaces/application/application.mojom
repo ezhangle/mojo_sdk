@@ -21,4 +21,7 @@ interface Application {
   AcceptConnection(string requestor_url,
                    ServiceProvider&? services,
                    ServiceProvider? exposed_services);
+
+  // Called to request the application shut itself down gracefully.
+  RequestQuit();
 };
