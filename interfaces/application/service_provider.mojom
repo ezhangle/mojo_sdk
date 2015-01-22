@@ -8,7 +8,6 @@ module mojo;
 // Instances of this interface are created within the context of an
 // already-identified client and host pair, so there is no need to explicitly
 // identify the client or host in the methods below.
-[Client=ServiceProvider]
 interface ServiceProvider {
   // Asks the host to provide the service identified by |interface_name| through
   // the message |pipe| endpoint supplied by the caller. If the host is not
