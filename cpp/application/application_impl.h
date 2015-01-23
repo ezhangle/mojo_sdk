@@ -52,6 +52,10 @@ class ApplicationDelegate;
 //
 class ApplicationImpl : public InterfaceImpl<Application> {
  public:
+  ApplicationImpl(ApplicationDelegate* delegate, ShellPtr shell);
+
+  // TODO(jamesr): Remove these two constructors, the only thing it makes sense
+  // to construct an ApplicationImpl with is a ShellPtr.
   ApplicationImpl(ApplicationDelegate* delegate,
                   ScopedMessagePipeHandle shell_handle);
   ApplicationImpl(ApplicationDelegate* delegate, MojoHandle shell_handle);

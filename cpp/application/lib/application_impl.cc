@@ -24,6 +24,11 @@ class ApplicationImpl::ShellPtrWatcher : public ErrorHandler {
   MOJO_DISALLOW_COPY_AND_ASSIGN(ShellPtrWatcher);
 };
 
+ApplicationImpl::ApplicationImpl(ApplicationDelegate* delegate, ShellPtr shell)
+    : initialized_(false), delegate_(delegate), shell_watch_(nullptr) {
+  BindShell(shell.PassMessagePipe());
+}
+
 ApplicationImpl::ApplicationImpl(ApplicationDelegate* delegate,
                                  ScopedMessagePipeHandle shell_handle)
     : initialized_(false), delegate_(delegate), shell_watch_(nullptr) {
