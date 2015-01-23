@@ -17,10 +17,12 @@ define("mojo/public/js/bindings", [
     this.receiver = receiver;
   }
 
+  // TODO(hansmuller): remove then after 'Client=' has been removed from Mojom.
   ProxyProperties.prototype.getLocalDelegate = function() {
     return this.local && StubBindings(this.local).delegate;
   }
 
+  // TODO(hansmuller): remove then after 'Client=' has been removed from Mojom.
   ProxyProperties.prototype.setLocalDelegate = function(impl) {
     if (this.local)
       StubBindings(this.local).delegate = impl;
@@ -48,6 +50,9 @@ define("mojo/public/js/bindings", [
     this[kStubProperties] = new StubProperties(delegate);
   }
 
+  // TODO(hansmuller): remove everything except the connection property doc
+  // after 'Client=' has been removed from Mojom.
+
   // Provides access to properties added to a proxy object without risking
   // Mojo interface name collisions. Unless otherwise specified, the initial
   // value of all properties is undefined.
@@ -70,6 +75,9 @@ define("mojo/public/js/bindings", [
   function ProxyBindings(proxy) {
     return (proxy instanceof ProxyBase) ? proxy[kProxyProperties] : proxy;
   }
+
+  // TODO(hansmuller): remove the remote doc after 'Client=' has been
+  // removed from Mojom.
 
   // Provides access to properties added to a stub object without risking
   // Mojo interface name collisions. Unless otherwise specified, the initial
