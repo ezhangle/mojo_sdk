@@ -4,16 +4,16 @@
 
 part of application;
 
-typedef bindings.Interface InterfaceFactory(
+typedef bindings.Stub StubFactory(
     core.MojoMessagePipeEndpoint endpoint);
 
-class ServiceProvider implements service_provider.ServiceProviderInterface {
-  InterfaceFactory _interfaceFactory;
+class ServiceProvider implements service_provider.ServiceProviderStub {
+  StubFactory _stubFactory;
 
-  ServiceProvider(this._interfaceFactory);
+  ServiceProvider(this._stubFactory);
 
   connectToService(String interfaceName, core.MojoMessagePipeEndpoint pipe) {
-    var interfaceImpl = _interfaceFactory(pipe);
-    interfaceImpl.listen();
+    var stubImpl = _stubFactory(pipe);
+    stubImpl.listen();
   }
 }
