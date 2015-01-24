@@ -53,12 +53,6 @@ class ApplicationDelegate;
 class ApplicationImpl : public InterfaceImpl<Application> {
  public:
   ApplicationImpl(ApplicationDelegate* delegate, ShellPtr shell);
-
-  // TODO(jamesr): Remove these two constructors, the only thing it makes sense
-  // to construct an ApplicationImpl with is a ShellPtr.
-  ApplicationImpl(ApplicationDelegate* delegate,
-                  ScopedMessagePipeHandle shell_handle);
-  ApplicationImpl(ApplicationDelegate* delegate, MojoHandle shell_handle);
   ~ApplicationImpl() override;
 
   Shell* shell() const { return shell_.get(); }
@@ -78,11 +72,8 @@ class ApplicationImpl : public InterfaceImpl<Application> {
     ConnectToApplication(application_url)->ConnectToService(ptr);
   }
 
-  // Wait for the ShellPtr's Initialize message.
-  bool WaitForInitialize();
-
   // Unbind the shell from this application and return its handle.
-  ScopedMessagePipeHandle UnbindShell();
+  ShellPtr UnbindShell();
 
   // Application implementation.
   void Initialize(Array<String> args) override;
@@ -93,8 +84,8 @@ class ApplicationImpl : public InterfaceImpl<Application> {
  private:
   class ShellPtrWatcher;
 
-  void BindShell(ScopedMessagePipeHandle shell_handle);
   void ClearConnections();
+
   void OnShellError() {
     ClearConnections();
     Terminate();

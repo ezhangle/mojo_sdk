@@ -64,6 +64,7 @@ mojo_sdk_source_set("test_support") {
     "mojo/public/cpp/bindings",
     "mojo/public/cpp/environment",
     "mojo/public/cpp/system",
+    "mojo/public/interfaces/application",
   ]
 }
 
@@ -85,5 +86,6 @@ mojo_sdk_source_set("test_support_standalone") {
     "mojo/public/cpp/environment:standalone",
     "mojo/public/cpp/system",
     "mojo/public/cpp/utility",
+    "mojo/public/interfaces/application",
   ]
 }

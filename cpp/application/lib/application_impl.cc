@@ -25,20 +25,12 @@ class ApplicationImpl::ShellPtrWatcher : public ErrorHandler {
 };
 
 ApplicationImpl::ApplicationImpl(ApplicationDelegate* delegate, ShellPtr shell)
-    : initialized_(false), delegate_(delegate), shell_watch_(nullptr) {
-  BindShell(shell.PassMessagePipe());
-}
-
-ApplicationImpl::ApplicationImpl(ApplicationDelegate* delegate,
-                                 ScopedMessagePipeHandle shell_handle)
-    : initialized_(false), delegate_(delegate), shell_watch_(nullptr) {
-  BindShell(shell_handle.Pass());
-}
-
-ApplicationImpl::ApplicationImpl(ApplicationDelegate* delegate,
-                                 MojoHandle shell_handle)
-    : initialized_(false), delegate_(delegate), shell_watch_(nullptr) {
-  BindShell(MakeScopedHandle(MessagePipeHandle(shell_handle)));
+    : initialized_(false),
+      delegate_(delegate),
+      shell_(shell.Pass()),
+      shell_watch_(new ShellPtrWatcher(this)) {
+  shell_.set_client(this);
+  shell_.set_error_handler(shell_watch_);
 }
 
 bool ApplicationImpl::HasArg(const std::string& arg) const {
@@ -81,15 +73,11 @@ ApplicationConnection* ApplicationImpl::ConnectToApplication(
   return registry;
 }
 
-bool ApplicationImpl::WaitForInitialize() {
-  MOJO_CHECK(!initialized_);
-  bool result = shell_.WaitForIncomingMethodCall();
-  MOJO_CHECK(initialized_ || !result);
-  return result;
-}
-
-ScopedMessagePipeHandle ApplicationImpl::UnbindShell() {
-  return shell_.PassMessagePipe();
+ShellPtr ApplicationImpl::UnbindShell() {
+  MOJO_CHECK(shell_);
+  ShellPtr unbound_shell;
+  unbound_shell.Bind(shell_.PassMessagePipe());
+  return unbound_shell.Pass();
 }
 
 void ApplicationImpl::Initialize(Array<String> args) {
@@ -97,13 +85,6 @@ void ApplicationImpl::Initialize(Array<String> args) {
   initialized_ = true;
   args_ = args.To<std::vector<std::string>>();
   delegate_->Initialize(this);
-}
-
-void ApplicationImpl::BindShell(ScopedMessagePipeHandle shell_handle) {
-  shell_watch_ = new ShellPtrWatcher(this);
-  shell_.Bind(shell_handle.Pass());
-  shell_.set_client(this);
-  shell_.set_error_handler(shell_watch_);
 }
 
 void ApplicationImpl::AcceptConnection(
