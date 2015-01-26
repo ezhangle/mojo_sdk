@@ -94,7 +94,7 @@ MojoResult RunAllTests(ShellPtr shell) {
     int argc = static_cast<int>(args.size());
     std::vector<const char*> argv(argc + 1);
     for (int i = 0; i < argc; ++i)
-      argv[i] = args[i].To<std::string>().c_str();
+      argv[i] = args[i].get().c_str();
     argv[argc] = nullptr;
 
     testing::InitGoogleTest(&argc, const_cast<char**>(&(argv[0])));
