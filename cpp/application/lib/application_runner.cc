@@ -23,13 +23,12 @@ ApplicationRunner::~ApplicationRunner() {
   assert(!delegate_);
 }
 
-MojoResult ApplicationRunner::Run(MojoHandle shell_handle) {
+MojoResult ApplicationRunner::Run(MojoHandle app_request_handle) {
   Environment env;
   {
     RunLoop loop;
-    ShellPtr shell;
-    shell.Bind(MakeScopedHandle(MessagePipeHandle(shell_handle)));
-    ApplicationImpl app(delegate_, shell.Pass());
+    ApplicationImpl app(delegate_, MakeRequest<Application>(MakeScopedHandle(
+                                       MessagePipeHandle(app_request_handle))));
     loop.Run();
   }
 

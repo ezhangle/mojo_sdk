@@ -24,13 +24,12 @@ class ApplicationImpl::ShellPtrWatcher : public ErrorHandler {
   MOJO_DISALLOW_COPY_AND_ASSIGN(ShellPtrWatcher);
 };
 
-ApplicationImpl::ApplicationImpl(ApplicationDelegate* delegate, ShellPtr shell)
+ApplicationImpl::ApplicationImpl(ApplicationDelegate* delegate,
+                                 InterfaceRequest<Application> request)
     : initialized_(false),
       delegate_(delegate),
-      shell_(shell.Pass()),
-      shell_watch_(new ShellPtrWatcher(this)) {
-  shell_.set_client(this);
-  shell_.set_error_handler(shell_watch_);
+      binding_(this, request.Pass()),
+      shell_watch_(nullptr) {
 }
 
 bool ApplicationImpl::HasArg(const std::string& arg) const {
@@ -57,7 +56,7 @@ ApplicationImpl::~ApplicationImpl() {
 
 ApplicationConnection* ApplicationImpl::ConnectToApplication(
     const String& application_url) {
-  MOJO_CHECK(initialized_);
+  MOJO_CHECK(shell_);
   ServiceProviderPtr local_services;
   InterfaceRequest<ServiceProvider> local_request = GetProxy(&local_services);
   ServiceProviderPtr remote_services;
@@ -73,18 +72,24 @@ ApplicationConnection* ApplicationImpl::ConnectToApplication(
   return registry;
 }
 
-ShellPtr ApplicationImpl::UnbindShell() {
-  MOJO_CHECK(shell_);
-  ShellPtr unbound_shell;
-  unbound_shell.Bind(shell_.PassMessagePipe());
-  return unbound_shell.Pass();
-}
-
-void ApplicationImpl::Initialize(Array<String> args) {
-  MOJO_CHECK(!initialized_);
-  initialized_ = true;
+void ApplicationImpl::Initialize(ShellPtr shell, Array<String> args) {
+  shell_ = shell.Pass();
+  shell_watch_ = new ShellPtrWatcher(this);
+  shell_.set_error_handler(shell_watch_);
   args_ = args.To<std::vector<std::string>>();
   delegate_->Initialize(this);
+}
+
+void ApplicationImpl::WaitForInitialize() {
+  if (!shell_)
+    binding_.WaitForIncomingMethodCall();
+}
+
+void ApplicationImpl::UnbindConnections(
+    InterfaceRequest<Application>* application_request,
+    ShellPtr* shell) {
+  *application_request = binding_.Unbind();
+  shell->Bind(shell_.PassMessagePipe());
 }
 
 void ApplicationImpl::AcceptConnection(

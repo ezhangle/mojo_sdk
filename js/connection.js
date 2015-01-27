@@ -168,6 +168,8 @@ define("mojo/public/js/connection", [
     var router = new Router(handle);
     var connection = new BaseConnection(undefined, proxy, router);
     ProxyBindings(proxy).connection = connection;
+    // TODO(hansmuller): Provide a way to explicitly close a proxy.
+    proxy.handleStash = handle;
     return proxy;
   }
 

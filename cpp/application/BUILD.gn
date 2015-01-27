@@ -83,6 +83,7 @@ mojo_sdk_source_set("test_support_standalone") {
   ]
 
   mojo_sdk_deps = [
+    "mojo/public/interfaces/application",
     "mojo/public/cpp/environment:standalone",
     "mojo/public/cpp/system",
     "mojo/public/cpp/utility",

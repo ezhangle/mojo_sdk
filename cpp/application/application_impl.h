@@ -50,9 +50,10 @@ class ApplicationDelegate;
 // app.AddService<BarImpl>(&context);
 //
 //
-class ApplicationImpl : public InterfaceImpl<Application> {
+class ApplicationImpl : public Application {
  public:
-  ApplicationImpl(ApplicationDelegate* delegate, ShellPtr shell);
+  ApplicationImpl(ApplicationDelegate* delegate,
+                  InterfaceRequest<Application> request);
   ~ApplicationImpl() override;
 
   Shell* shell() const { return shell_.get(); }
@@ -72,11 +73,16 @@ class ApplicationImpl : public InterfaceImpl<Application> {
     ConnectToApplication(application_url)->ConnectToService(ptr);
   }
 
-  // Unbind the shell from this application and return its handle.
-  ShellPtr UnbindShell();
-
   // Application implementation.
-  void Initialize(Array<String> args) override;
+  void Initialize(ShellPtr shell, Array<String> args) override;
+
+  // Block until the Application is initialized, if it is not already.
+  void WaitForInitialize();
+
+  // Unbinds the Shell and Application connections. Must be called after
+  // Initialize.
+  void UnbindConnections(InterfaceRequest<Application>* application_request,
+                         ShellPtr* shell);
 
   // Quits the main run loop for this application.
   static void Terminate();
@@ -103,6 +109,7 @@ class ApplicationImpl : public InterfaceImpl<Application> {
   ServiceRegistryList incoming_service_registries_;
   ServiceRegistryList outgoing_service_registries_;
   ApplicationDelegate* delegate_;
+  Binding<Application> binding_;
   ShellPtr shell_;
   ShellPtrWatcher* shell_watch_;
   std::vector<std::string> args_;
