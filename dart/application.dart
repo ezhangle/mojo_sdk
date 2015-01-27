@@ -12,7 +12,7 @@ import 'dart:typed_data';
 
 import 'package:mojo/public/interfaces/application/application.mojom.dart' as application;
 import 'package:mojo/public/interfaces/application/service_provider.mojom.dart' as service_provider;
-import 'package:mojo/public/interfaces/application/shell.mojom.dart' as shell;
+import 'package:mojo/public/interfaces/application/shell.mojom.dart' as shell_mojom;
 
 part 'src/application.dart';
 part 'src/service_provider.dart';
