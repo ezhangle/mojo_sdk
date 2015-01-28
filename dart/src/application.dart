@@ -4,11 +4,20 @@
 
 part of application;
 
-class ApplicationImpl implements application.ApplicationStub {
+class _ApplicationImpl extends application_mojom.Application {
   shell_mojom.ShellProxy shell;
   Application _application;
 
-  ApplicationImpl(this._application);
+  _ApplicationImpl(
+      Application application, core.MojoMessagePipeEndpoint endpoint)
+      : _application = application, super(endpoint) {
+    super.delegate = this;
+  }
+
+  _ApplicationImpl.fromHandle(Application application, core.MojoHandle handle)
+      : _application = application, super.fromHandle(handle) {
+    super.delegate = this;
+  }
 
   void initialize(shell_mojom.ShellProxy shellProxy, List<String> args) {
     assert(shell == null);
@@ -22,37 +31,42 @@ class ApplicationImpl implements application.ApplicationStub {
       service_provider.ServiceProviderProxy exposedServices) =>
       _application._acceptConnection(requestorUrl, services, exposedServices);
 
+  void requestQuit() => _application._requestQuitAndClose();
+
   void close() => shell.close();
 }
 
 // TODO(zra): Better documentation and examples.
-// To implement, provide a stubFactoryClosure() that returns a function
-// that takes a MojoMessagePipeEndpoint and returns a Stub that provides the
-// Application's services. The function may return null if the Application
-// provides no services. Optionally override initialize() when needed. Call
-// listen() on a newly created Application to begin providing services. Call
-// connectToService() to request services from the Shell. Calling close()
-// closes connections to any requested ServiceProviders and the Shell.
+// To implement, do the following:
+// - Optionally override acceptConnection() if services are to be provided.
+//   The override should assign a factory function to the passed in
+//   ServiceProvider's |factory| field, and then call listen on the
+//   ServiceProvider. The factory function should take a MojoMessagePipeEndpoint
+//   and return an object that implements the requested interface.
+// - Optionally override initialize() where needed.
+// - Optionally override requestClose() to clean up state specific to your
+//   application.
+// To use an Application:
+// - Call listen() on a newly created Application to begin providing services.
+// - Call connectToService() to request services from the Shell.
+// - Call close() to close connections to any requested ServiceProviders and the
+//   Shell.
 abstract class Application {
-  application.ApplicationStub _applicationStub;
-  ApplicationImpl _applicationImpl;
+  _ApplicationImpl _applicationImpl;
   List<service_provider.ServiceProviderProxy> _proxies;
+  List<ServiceProvider> _serviceProviders;
 
   Application(core.MojoMessagePipeEndpoint endpoint) {
     _proxies = [];
-    _applicationImpl = new ApplicationImpl(this);
-    _applicationStub = new application.ApplicationStub(endpoint)
-                       ..delegate = _applicationImpl;
+    _serviceProviders = [];
+    _applicationImpl = new _ApplicationImpl(this, endpoint);
   }
 
   Application.fromHandle(core.MojoHandle appHandle) {
     _proxies = [];
-    _applicationImpl = new ApplicationImpl(this);
-    _applicationStub = new application.ApplicationStub.fromHandle(appHandle)
-                       ..delegate = _applicationImpl;
+    _serviceProviders = [];
+    _applicationImpl = new _ApplicationImpl.fromHandle(this, appHandle);
   }
-
-  Function stubFactoryClosure();
 
   void initialize(List<String> args) {}
 
@@ -62,13 +76,21 @@ abstract class Application {
     proxy.bind(endpoint);
   }
 
-  listen() => _applicationStub.listen();
+  void requestQuit() {}
+
+  listen() => _applicationImpl.listen();
+
+  void _requestQuitAndClose() {
+    requestQuit();
+    close();
+  }
 
   void close() {
-    assert(_proxies != null);
     assert(_applicationImpl != null);
     _proxies.forEach((c) => c.close());
     _proxies.clear();
+    _serviceProviders.forEach((sp) => sp.close());
+    _serviceProviders.clear();
     _applicationImpl.close();
   }
 
@@ -76,13 +98,12 @@ abstract class Application {
       String requestorUrl,
       service_provider.ServiceProviderStub services,
       service_provider.ServiceProviderProxy exposedServices) {
-    var closure = stubFactoryClosure();
-    if (closure != null) {
-      var serviceProvider = new ServiceProvider(closure);
-      services.delegate = serviceProvider;
-      services.listen();
-    }
+    var serviceProvider = new ServiceProvider(services, exposedServices);
+    _serviceProviders.add(serviceProvider);
+    acceptConnection(requestorUrl, serviceProvider);
   }
+
+  void acceptConnection(String requestorUrl, ServiceProvider serviceProvider) {}
 
   core.MojoMessagePipeEndpoint _connectToServiceHelper(
       String url, String service) {
@@ -91,9 +112,9 @@ abstract class Application {
     var applicationEndpoint = applicationPipe.endpoints[1];
     var serviceProviderProxy =
         new service_provider.ServiceProviderProxy.unbound();
-    _applicationImpl.shell.callConnectToApplication(
+    _applicationImpl.shell.connectToApplication(
         url, serviceProviderProxy, null);
-    serviceProviderProxy.callConnectToService(service, applicationEndpoint);
+    serviceProviderProxy.connectToService(service, applicationEndpoint);
     _proxies.add(serviceProviderProxy);
     return proxyEndpoint;
   }

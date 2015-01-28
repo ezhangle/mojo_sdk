@@ -4,16 +4,36 @@
 
 part of application;
 
-typedef bindings.Stub StubFactory(
-    core.MojoMessagePipeEndpoint endpoint);
+typedef core.Listener ListenerFactory(core.MojoMessagePipeEndpoint endpoint);
 
-class ServiceProvider implements service_provider.ServiceProviderStub {
-  StubFactory _stubFactory;
+class ServiceProvider extends service_provider.ServiceProvider {
+  ListenerFactory factory;
 
-  ServiceProvider(this._stubFactory);
+  service_provider.ServiceProviderProxy _proxy;
 
-  connectToService(String interfaceName, core.MojoMessagePipeEndpoint pipe) {
-    var stubImpl = _stubFactory(pipe);
-    stubImpl.listen();
+  ServiceProvider(
+      service_provider.ServiceProviderStub services,
+      [service_provider.ServiceProviderProxy exposedServices = null])
+      : _proxy = exposedServices,
+        super.fromStub(services) {
+    delegate = this;
+  }
+
+  connectToService(String interfaceName, core.MojoMessagePipeEndpoint pipe) =>
+      factory(pipe).listen();
+
+  requestService(String name, bindings.Proxy clientImpl) {
+    assert(_proxy != null);
+    assert(!clientImpl.isBound);
+    var pipe = new core.MojoMessagePipe();
+    clientImpl.bind(pipe.endpoints[0]);
+    _proxy.connectToService(name, pipe.endpoints[1]);
+  }
+
+  close() {
+    if (_proxy != null) {
+      _proxy.close();
+      _proxy = null;
+    }
   }
 }

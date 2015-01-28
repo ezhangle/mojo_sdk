@@ -85,19 +85,4 @@ abstract class Stub extends core.MojoEventStreamListener {
     var header = new MessageHeader.withRequestId(name, flags, id);
     return response.serializeWithHeader(header);
   }
-
-  void sendMessage(Struct message, int name) {
-    var header = new MessageHeader(name);
-    var serviceMessage = message.serializeWithHeader(header);
-    endpoint.write(serviceMessage.buffer,
-                    serviceMessage.buffer.lengthInBytes,
-                    serviceMessage.handles);
-    if (!endpoint.status.isOk) {
-      throw "message pipe write failed: ${endpoint.status}";
-    }
-  }
-
-  Future sendMessageWithRequestId(Struct response, int name, int id) {
-    throw "The client stub should not expect a response";
-  }
 }
