@@ -79,8 +79,9 @@ class ApplicationImpl : public Application {
   // Block until the Application is initialized, if it is not already.
   void WaitForInitialize();
 
-  // Unbinds the Shell and Application connections. Must be called after
-  // Initialize.
+  // Unbinds the Shell and Application connections. Can be used to re-bind the
+  // handles to another implementation of ApplicationImpl, for instance when
+  // running apptests.
   void UnbindConnections(InterfaceRequest<Application>* application_request,
                          ShellPtr* shell);
 
@@ -106,7 +107,6 @@ class ApplicationImpl : public Application {
 
   typedef std::vector<internal::ServiceRegistry*> ServiceRegistryList;
 
-  bool initialized_;
   ServiceRegistryList incoming_service_registries_;
   ServiceRegistryList outgoing_service_registries_;
   ApplicationDelegate* delegate_;
