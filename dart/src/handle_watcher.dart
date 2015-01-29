@@ -339,7 +339,7 @@ class MojoHandleWatcher {
     return _sendControlData(mojoHandle, null, _encodeCommand(REMOVE));
   }
 
-  static MojoResult timer(SendPort port, int deadline) {
+  static MojoResult timer(Object ignored, SendPort port, int deadline) {
     // The deadline will be unwrapped before sending to the handle watcher.
     return _sendControlData(
         new MojoHandle(deadline), port, _encodeCommand(TIMER));
