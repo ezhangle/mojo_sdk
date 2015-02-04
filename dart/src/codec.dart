@@ -421,34 +421,34 @@ class Encoder {
   }
 
   void appendInt8Array(List<int> value) =>
-      appendBytes(new Uint8List.view(new Int8List.fromList(value)));
+      appendBytes(new Uint8List.view(new Int8List.fromList(value).buffer));
 
   void appendUint8Array(List<int> value) =>
       appendBytes(new Uint8List.fromList(value));
 
   void appendInt16Array(List<int> value) =>
-      appendBytes(new Uint8List.view(new Int16List.fromList(value)));
+      appendBytes(new Uint8List.view(new Int16List.fromList(value).buffer));
 
   void appendUint16Array(List<int> value) =>
-      appendBytes(new Uint8List.view(new Uint16List.fromList(value)));
+      appendBytes(new Uint8List.view(new Uint16List.fromList(value).buffer));
 
   void appendInt32Array(List<int> value) =>
-      appendBytes(new Uint8List.view(new Int32List.fromList(value)));
+      appendBytes(new Uint8List.view(new Int32List.fromList(value).buffer));
 
   void appendUint32Array(List<int> value) =>
-      appendBytes(new Uint8List.view(new Uint32List.fromList(value)));
+      appendBytes(new Uint8List.view(new Uint32List.fromList(value).buffer));
 
   void appendInt64Array(List<int> value) =>
-      appendBytes(new Uint8List.view(new Int64List.fromList(value)));
+      appendBytes(new Uint8List.view(new Int64List.fromList(value).buffer));
 
   void appendUint64Array(List<int> value) =>
-      appendBytes(new Uint8List.view(new Uint64List.fromList(value)));
+      appendBytes(new Uint8List.view(new Uint64List.fromList(value).buffer));
 
   void appendFloatArray(List<int> value) =>
-      appendBytes(new Uint8List.view(new Float32List.fromList(value)));
+      appendBytes(new Uint8List.view(new Float32List.fromList(value).buffer));
 
   void appendDoubleArray(List<int> value) =>
-      appendBytes(new Uint8List.view(new Float64List.fromList(value)));
+      appendBytes(new Uint8List.view(new Float64List.fromList(value).buffer));
 
   Encoder encoderForMap(int offset) {
     encodePointerToNextUnclaimed(offset);
@@ -657,11 +657,11 @@ class Decoder {
   DataHeader decodeDataHeaderForPointerArray(int expectedLength) =>
       decodeDataHeaderForArray(kPointerSize, expectedLength);
 
-  List<int> decodeArray(Function arrayViewer,
-                        int elementSize,
-                        int offset,
-                        int nullability,
-                        int expectedLength) {
+  List decodeArray(Function arrayViewer,
+                   int elementSize,
+                   int offset,
+                   int nullability,
+                   int expectedLength) {
     Decoder d = decodePointer(offset, isArrayNullable(nullability));
     if (d == null) {
       return null;
