@@ -58,6 +58,8 @@ class ApplicationImpl : public Application {
 
   Shell* shell() const { return shell_.get(); }
 
+  const std::string& url() const { return url_; }
+
   // Returns any initial configuration arguments, passed by the Shell.
   const std::vector<std::string>& args() const { return args_; }
   bool HasArg(const std::string& arg) const;
@@ -74,7 +76,9 @@ class ApplicationImpl : public Application {
   }
 
   // Application implementation.
-  void Initialize(ShellPtr shell, Array<String> args) override;
+  void Initialize(ShellPtr shell,
+                  Array<String> args,
+                  const mojo::String& url) override;
 
   // Block until the Application is initialized, if it is not already.
   void WaitForInitialize();
@@ -113,6 +117,7 @@ class ApplicationImpl : public Application {
   Binding<Application> binding_;
   ShellPtr shell_;
   ShellPtrWatcher* shell_watch_;
+  std::string url_;
   std::vector<std::string> args_;
 
   MOJO_DISALLOW_COPY_AND_ASSIGN(ApplicationImpl);

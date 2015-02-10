@@ -19,7 +19,7 @@ class _ApplicationImpl extends application_mojom.Application {
     super.delegate = this;
   }
 
-  void initialize(shell_mojom.ShellProxy shellProxy, List<String> args) {
+  void initialize(shell_mojom.ShellProxy shellProxy, List<String> args, String url) {
     assert(shell == null);
     shell = shellProxy;
     _application.initialize(args);
