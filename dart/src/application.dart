@@ -19,7 +19,9 @@ class _ApplicationImpl extends application_mojom.Application {
     super.delegate = this;
   }
 
-  void initialize(shell_mojom.ShellProxy shellProxy, List<String> args, String url) {
+  void initialize(shell_mojom.ShellProxy shellProxy,
+                  List<String> args,
+                  String url) {
     assert(shell == null);
     shell = shellProxy;
     _application.initialize(args, url);
@@ -57,10 +59,8 @@ class ApplicationConnection {
 // TODO(zra): Better documentation and examples.
 // To implement, do the following:
 // - Optionally override acceptConnection() if services are to be provided.
-//   The override should assign a factory function to the passed in
-//   ServiceProvider's |factory| field, and then call listen on the
-//   ServiceProvider. The factory function should take a MojoMessagePipeEndpoint
-//   and return an object that implements the requested interface.
+//   The override should configure the supplied ServiceProvider and call
+//   listen(). See ServiceProvider for details on how to configure it.
 // - Optionally override initialize() where needed.
 // - Optionally override requestClose() to clean up state specific to your
 //   application.
@@ -131,5 +131,8 @@ abstract class Application {
     acceptConnection(requestorUrl, serviceProvider);
   }
 
+  // Override to register the necessary set of interface on |serviceProvider|.
+  // If you register at least one interface (or set the fallback), then you
+  // must invoke serviceProvider.listen().
   void acceptConnection(String requestorUrl, ServiceProvider serviceProvider) {}
 }

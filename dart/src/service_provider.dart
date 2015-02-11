@@ -4,16 +4,30 @@
 
 part of application;
 
-typedef core.Listener ListenerFactory(core.MojoMessagePipeEndpoint endpoint);
-typedef core.Listener FallbackListenerFactory(
+typedef core.Listener InterfaceFactory(core.MojoMessagePipeEndpoint endpoint);
+typedef void FallbackInterfaceFactory(
         String interfaceName, core.MojoMessagePipeEndpoint endpoint);
 
+// ServiceProvider implementation used to provide services to a remote
+// application. Register a factory for service creation using either of the
+// following:
+// 1. When you know the interface use registerFactory(), e.g.
+//    serviceProvider.registerFactory(ViewManagerClient.name, (pipe) =>
+//        new ViewManagerClientImpl(pipe));
+// 2. To handle requests for any interface set the FallbackFactory. The
+//    FallbackFactory is passed the name of the requested interface.
+//
+// If a factory has been registered based on the name, it is used. If the
+// factory returned null or there is no registered factory then the
+// fallbackFactory is used. The fallbackFactory does not return a type; the
+// factory takes ownership and if it does not want to use the pipe it must
+// call close().
 class ServiceProvider extends service_provider.ServiceProvider {
-  FallbackListenerFactory fallbackFactory;
+  FallbackInterfaceFactory fallbackFactory;
 
   service_provider.ServiceProviderProxy _proxy;
 
-  Map<String, ListenerFactory> _interfaceFactories;
+  Map<String, InterfaceFactory> _interfaceFactories;
 
   ServiceProvider(
       service_provider.ServiceProviderStub services,
@@ -33,11 +47,8 @@ class ServiceProvider extends service_provider.ServiceProvider {
       }
     }
     if (fallbackFactory != null) {
-      var listener = fallbackFactory(interfaceName, pipe);
-      if (listener != null) {
-        listener.listen();
-        return;
-      }
+      fallbackFactory(interfaceName, pipe);
+      return;
     }
     // If we get here the interface isn't known. This is legal. Close the pipe
     // so the remote side sees we don't support this interface.
@@ -52,7 +63,7 @@ class ServiceProvider extends service_provider.ServiceProvider {
     _proxy.connectToService(name, pipe.endpoints[1]);
   }
 
-  registerFactory(String interfaceName, ListenerFactory factory) {
+  registerFactory(String interfaceName, InterfaceFactory factory) {
     _interfaceFactories[interfaceName] = factory;
   }
 
