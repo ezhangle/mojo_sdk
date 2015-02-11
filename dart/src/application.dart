@@ -22,7 +22,7 @@ class _ApplicationImpl extends application_mojom.Application {
   void initialize(shell_mojom.ShellProxy shellProxy, List<String> args, String url) {
     assert(shell == null);
     shell = shellProxy;
-    _application.initialize(args);
+    _application.initialize(args, url);
   }
 
   void acceptConnection(
@@ -86,7 +86,7 @@ abstract class Application {
     _applicationImpl = new _ApplicationImpl.fromHandle(this, appHandle);
   }
 
-  void initialize(List<String> args) {}
+  void initialize(List<String> args, String url) {}
 
   // Establishes a connection to the app at |url|.
   ApplicationConnection connectToApplication(String url) {
