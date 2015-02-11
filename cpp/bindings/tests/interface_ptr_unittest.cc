@@ -152,12 +152,14 @@ class ReentrantServiceImpl : public InterfaceImpl<sample::Service> {
 
   void Frobinate(sample::FooPtr foo,
                  sample::Service::BazOptions baz,
-                 sample::PortPtr port) override {
+                 sample::PortPtr port,
+                 const sample::Service::FrobinateCallback& callback) override {
     max_call_depth_ = std::max(++call_depth_, max_call_depth_);
     if (call_depth_ == 1) {
       EXPECT_TRUE(WaitForIncomingMethodCall());
     }
     call_depth_--;
+    callback.Run(5);
   }
 
   void GetPort(mojo::InterfaceRequest<sample::Port> port) override {}
@@ -353,8 +355,10 @@ TEST_F(InterfacePtrTest, ReentrantWaitForIncomingMethodCall) {
   sample::ServicePtr proxy;
   ReentrantServiceImpl* impl = BindToProxy(new ReentrantServiceImpl(), &proxy);
 
-  proxy->Frobinate(nullptr, sample::Service::BAZ_OPTIONS_REGULAR, nullptr);
-  proxy->Frobinate(nullptr, sample::Service::BAZ_OPTIONS_REGULAR, nullptr);
+  proxy->Frobinate(nullptr, sample::Service::BAZ_OPTIONS_REGULAR, nullptr,
+                   sample::Service::FrobinateCallback());
+  proxy->Frobinate(nullptr, sample::Service::BAZ_OPTIONS_REGULAR, nullptr,
+                   sample::Service::FrobinateCallback());
 
   PumpMessages();
 

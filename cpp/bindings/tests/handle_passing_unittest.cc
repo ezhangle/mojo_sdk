@@ -51,7 +51,8 @@ class SampleNamedObjectImpl : public InterfaceImpl<sample::NamedObject> {
 class SampleFactoryImpl : public InterfaceImpl<sample::Factory> {
  public:
   void DoStuff(sample::RequestPtr request,
-               ScopedMessagePipeHandle pipe) override {
+               ScopedMessagePipeHandle pipe,
+               const DoStuffCallback& callback) override {
     std::string text1;
     if (pipe.is_valid())
       EXPECT_TRUE(ReadTextMessage(pipe.get(), &text1));
@@ -73,13 +74,14 @@ class SampleFactoryImpl : public InterfaceImpl<sample::Factory> {
     sample::ResponsePtr response(sample::Response::New());
     response->x = 2;
     response->pipe = pipe0.Pass();
-    client()->DidStuff(response.Pass(), text1);
+    callback.Run(response.Pass(), text1);
 
     if (request->obj)
       request->obj->DoSomething();
   }
 
-  void DoStuff2(ScopedDataPipeConsumerHandle pipe) override {
+  void DoStuff2(ScopedDataPipeConsumerHandle pipe,
+                const DoStuff2Callback& callback) override {
     // Read the data from the pipe, writing the response (as a string) to
     // DidStuff2().
     ASSERT_TRUE(pipe.is_valid());
@@ -95,7 +97,7 @@ class SampleFactoryImpl : public InterfaceImpl<sample::Factory> {
         ReadDataRaw(
             pipe.get(), data, &data_size, MOJO_READ_DATA_FLAG_ALL_OR_NONE));
 
-    client()->DidStuff2(data);
+    callback.Run(data);
   }
 
   void CreateNamedObject(
@@ -120,19 +122,23 @@ class SampleFactoryImpl : public InterfaceImpl<sample::Factory> {
   ScopedMessagePipeHandle pipe1_;
 };
 
-class SampleFactoryClientImpl : public sample::FactoryClient {
+class HandlePassingTest : public testing::Test {
  public:
-  SampleFactoryClientImpl() : got_response_(false) {}
+  void TearDown() override { PumpMessages(); }
 
-  void set_expected_text_reply(const std::string& expected_text_reply) {
-    expected_text_reply_ = expected_text_reply;
-  }
+  void PumpMessages() { loop_.RunUntilIdle(); }
 
-  bool got_response() const { return got_response_; }
+ private:
+  Environment env_;
+  RunLoop loop_;
+};
 
-  void DidStuff(sample::ResponsePtr response,
-                const String& text_reply) override {
-    EXPECT_EQ(expected_text_reply_, text_reply);
+struct DoStuffCallback {
+  DoStuffCallback(bool* got_response, std::string* got_text_reply)
+      : got_response(got_response), got_text_reply(got_text_reply) {}
+
+  void Run(sample::ResponsePtr response, const String& text_reply) const {
+    *got_text_reply = text_reply;
 
     if (response->pipe.is_valid()) {
       std::string text2;
@@ -149,40 +155,16 @@ class SampleFactoryClientImpl : public sample::FactoryClient {
       EXPECT_FALSE(response->pipe.is_valid());
     }
 
-    got_response_ = true;
+    *got_response = true;
   }
 
-  void DidStuff2(const String& text_reply) override {
-    got_response_ = true;
-    EXPECT_EQ(expected_text_reply_, text_reply);
-  }
-
- private:
-  ScopedMessagePipeHandle pipe1_;
-  ScopedMessagePipeHandle pipe3_;
-  std::string expected_text_reply_;
-  bool got_response_;
-};
-
-class HandlePassingTest : public testing::Test {
- public:
-  void TearDown() override { PumpMessages(); }
-
-  void PumpMessages() { loop_.RunUntilIdle(); }
-
- private:
-  Environment env_;
-  RunLoop loop_;
+  bool* got_response;
+  std::string* got_text_reply;
 };
 
 TEST_F(HandlePassingTest, Basic) {
   sample::FactoryPtr factory;
   BindToProxy(new SampleFactoryImpl(), &factory);
-
-  SampleFactoryClientImpl factory_client;
-  factory_client.set_expected_text_reply(kText1);
-
-  factory.set_client(&factory_client);
 
   MessagePipe pipe0;
   EXPECT_TRUE(WriteTextMessage(pipe0.handle1.get(), kText1));
@@ -197,14 +179,18 @@ TEST_F(HandlePassingTest, Basic) {
   request->x = 1;
   request->pipe = pipe1.handle0.Pass();
   request->obj = imported.Pass();
-  factory->DoStuff(request.Pass(), pipe0.handle0.Pass());
+  bool got_response = false;
+  std::string got_text_reply;
+  DoStuffCallback cb(&got_response, &got_text_reply);
+  factory->DoStuff(request.Pass(), pipe0.handle0.Pass(), cb);
 
-  EXPECT_FALSE(factory_client.got_response());
+  EXPECT_FALSE(*cb.got_response);
   int count_before = ImportedInterfaceImpl::do_something_count();
 
   PumpMessages();
 
-  EXPECT_TRUE(factory_client.got_response());
+  EXPECT_TRUE(*cb.got_response);
+  EXPECT_EQ(kText1, *cb.got_text_reply);
   EXPECT_EQ(1, ImportedInterfaceImpl::do_something_count() - count_before);
 }
 
@@ -212,27 +198,37 @@ TEST_F(HandlePassingTest, PassInvalid) {
   sample::FactoryPtr factory;
   BindToProxy(new SampleFactoryImpl(), &factory);
 
-  SampleFactoryClientImpl factory_client;
-  factory.set_client(&factory_client);
-
   sample::RequestPtr request(sample::Request::New());
   request->x = 1;
-  factory->DoStuff(request.Pass(), ScopedMessagePipeHandle().Pass());
+  bool got_response = false;
+  std::string got_text_reply;
+  DoStuffCallback cb(&got_response, &got_text_reply);
+  factory->DoStuff(request.Pass(), ScopedMessagePipeHandle().Pass(), cb);
 
-  EXPECT_FALSE(factory_client.got_response());
+  EXPECT_FALSE(*cb.got_response);
 
   PumpMessages();
 
-  EXPECT_TRUE(factory_client.got_response());
+  EXPECT_TRUE(*cb.got_response);
 }
+
+struct DoStuff2Callback {
+  DoStuff2Callback(bool* got_response, std::string* got_text_reply)
+      : got_response(got_response), got_text_reply(got_text_reply) {}
+
+  void Run(const String& text_reply) const {
+    *got_response = true;
+    *got_text_reply = text_reply;
+  }
+
+  bool* got_response;
+  std::string* got_text_reply;
+};
 
 // Verifies DataPipeConsumer can be passed and read from.
 TEST_F(HandlePassingTest, DataPipe) {
   sample::FactoryPtr factory;
   BindToProxy(new SampleFactoryImpl(), &factory);
-
-  SampleFactoryClientImpl factory_client;
-  factory.set_client(&factory_client);
 
   // Writes a string to a data pipe and passes the data pipe (consumer) to the
   // factory.
@@ -245,7 +241,6 @@ TEST_F(HandlePassingTest, DataPipe) {
   ASSERT_EQ(MOJO_RESULT_OK,
             CreateDataPipe(&options, &producer_handle, &consumer_handle));
   std::string expected_text_reply = "got it";
-  factory_client.set_expected_text_reply(expected_text_reply);
   // +1 for \0.
   uint32_t data_size = static_cast<uint32_t>(expected_text_reply.size() + 1);
   ASSERT_EQ(MOJO_RESULT_OK,
@@ -254,21 +249,22 @@ TEST_F(HandlePassingTest, DataPipe) {
                          &data_size,
                          MOJO_WRITE_DATA_FLAG_ALL_OR_NONE));
 
-  factory->DoStuff2(consumer_handle.Pass());
+  bool got_response = false;
+  std::string got_text_reply;
+  DoStuff2Callback cb(&got_response, &got_text_reply);
+  factory->DoStuff2(consumer_handle.Pass(), cb);
 
-  EXPECT_FALSE(factory_client.got_response());
+  EXPECT_FALSE(*cb.got_response);
 
   PumpMessages();
 
-  EXPECT_TRUE(factory_client.got_response());
+  EXPECT_TRUE(*cb.got_response);
+  EXPECT_EQ(expected_text_reply, *cb.got_text_reply);
 }
 
 TEST_F(HandlePassingTest, PipesAreClosed) {
   sample::FactoryPtr factory;
   BindToProxy(new SampleFactoryImpl(), &factory);
-
-  SampleFactoryClientImpl factory_client;
-  factory.set_client(&factory_client);
 
   MessagePipe extra_pipe;
 
@@ -283,7 +279,8 @@ TEST_F(HandlePassingTest, PipesAreClosed) {
     sample::RequestPtr request(sample::Request::New());
     request->more_pipes = pipes.Pass();
 
-    factory->DoStuff(request.Pass(), ScopedMessagePipeHandle());
+    factory->DoStuff(request.Pass(), ScopedMessagePipeHandle(),
+                     sample::Factory::DoStuffCallback());
   }
 
   // We expect the pipes to have been closed.

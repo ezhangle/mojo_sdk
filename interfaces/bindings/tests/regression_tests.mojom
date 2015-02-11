@@ -54,7 +54,3 @@ struct A {
 struct B {
   A? a;
 };
-
-[Client=InterfaceWithClientImportedClient]
-interface InterfaceWithClientImported {
-};
