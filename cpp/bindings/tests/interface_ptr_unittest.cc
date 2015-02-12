@@ -313,15 +313,7 @@ TEST_F(InterfacePtrTest, EncounteredErrorCallback) {
   EXPECT_TRUE(error_observer.encountered_error());
 }
 
-TEST_F(InterfacePtrTest, NoClientAttribute) {
-  // This is a test to ensure the following compiles. The sample::Port interface
-  // does not have an explicit Client attribute.
-  sample::PortPtr port;
-  MessagePipe pipe;
-  port.Bind(pipe.handle0.Pass());
-}
-
-TEST_F(InterfacePtrTest, DestroyInterfacePtrOnClientMethod) {
+TEST_F(InterfacePtrTest, DestroyInterfacePtrOnMethodResponse) {
   math::CalculatorPtr proxy;
   BindToProxy(new MathCalculatorImpl(), &proxy);
 
@@ -336,7 +328,7 @@ TEST_F(InterfacePtrTest, DestroyInterfacePtrOnClientMethod) {
   EXPECT_EQ(0, SelfDestructingMathCalculatorUI::num_instances());
 }
 
-TEST_F(InterfacePtrTest, NestedDestroyInterfacePtrOnClientMethod) {
+TEST_F(InterfacePtrTest, NestedDestroyInterfacePtrOnMethodResponse) {
   math::CalculatorPtr proxy;
   BindToProxy(new MathCalculatorImpl(), &proxy);
 
