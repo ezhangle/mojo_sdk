@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "mojo/public/cpp/bindings/binding.h"
+#include "mojo/public/cpp/bindings/strong_binding.h"
 #include "mojo/public/cpp/environment/environment.h"
 #include "mojo/public/cpp/test_support/test_utils.h"
 #include "mojo/public/cpp/utility/run_loop.h"
@@ -24,20 +26,26 @@ class StringRecorder {
   std::string* buf_;
 };
 
-class ImportedInterfaceImpl
-    : public InterfaceImpl<imported::ImportedInterface> {
+class ImportedInterfaceImpl : public imported::ImportedInterface {
  public:
+  explicit ImportedInterfaceImpl(
+      InterfaceRequest<imported::ImportedInterface> request)
+      : binding_(this, request.Pass()) {}
+
   void DoSomething() override { do_something_count_++; }
 
   static int do_something_count() { return do_something_count_; }
 
  private:
   static int do_something_count_;
+  Binding<ImportedInterface> binding_;
 };
 int ImportedInterfaceImpl::do_something_count_ = 0;
 
-class SampleNamedObjectImpl : public InterfaceImpl<sample::NamedObject> {
+class SampleNamedObjectImpl : public sample::NamedObject {
  public:
+  explicit SampleNamedObjectImpl(InterfaceRequest<sample::NamedObject> request)
+      : binding_(this, request.Pass()) {}
   void SetName(const mojo::String& name) override { name_ = name; }
 
   void GetName(const mojo::Callback<void(mojo::String)>& callback) override {
@@ -46,10 +54,14 @@ class SampleNamedObjectImpl : public InterfaceImpl<sample::NamedObject> {
 
  private:
   std::string name_;
+  StrongBinding<sample::NamedObject> binding_;
 };
 
-class SampleFactoryImpl : public InterfaceImpl<sample::Factory> {
+class SampleFactoryImpl : public sample::Factory {
  public:
+  explicit SampleFactoryImpl(InterfaceRequest<sample::Factory> request)
+      : binding_(this, request.Pass()) {}
+
   void DoStuff(sample::RequestPtr request,
                ScopedMessagePipeHandle pipe,
                const DoStuffCallback& callback) override {
@@ -103,7 +115,7 @@ class SampleFactoryImpl : public InterfaceImpl<sample::Factory> {
   void CreateNamedObject(
       InterfaceRequest<sample::NamedObject> object_request) override {
     EXPECT_TRUE(object_request.is_pending());
-    BindToRequest(new SampleNamedObjectImpl(), &object_request);
+    new SampleNamedObjectImpl(object_request.Pass());
   }
 
   // These aren't called or implemented, but exist here to test that the
@@ -120,6 +132,7 @@ class SampleFactoryImpl : public InterfaceImpl<sample::Factory> {
 
  private:
   ScopedMessagePipeHandle pipe1_;
+  Binding<sample::Factory> binding_;
 };
 
 class HandlePassingTest : public testing::Test {
@@ -164,7 +177,7 @@ struct DoStuffCallback {
 
 TEST_F(HandlePassingTest, Basic) {
   sample::FactoryPtr factory;
-  BindToProxy(new SampleFactoryImpl(), &factory);
+  SampleFactoryImpl factory_impl(GetProxy(&factory));
 
   MessagePipe pipe0;
   EXPECT_TRUE(WriteTextMessage(pipe0.handle1.get(), kText1));
@@ -173,7 +186,7 @@ TEST_F(HandlePassingTest, Basic) {
   EXPECT_TRUE(WriteTextMessage(pipe1.handle1.get(), kText2));
 
   imported::ImportedInterfacePtr imported;
-  BindToProxy(new ImportedInterfaceImpl(), &imported);
+  ImportedInterfaceImpl imported_impl(GetProxy(&imported));
 
   sample::RequestPtr request(sample::Request::New());
   request->x = 1;
@@ -196,7 +209,7 @@ TEST_F(HandlePassingTest, Basic) {
 
 TEST_F(HandlePassingTest, PassInvalid) {
   sample::FactoryPtr factory;
-  BindToProxy(new SampleFactoryImpl(), &factory);
+  SampleFactoryImpl factory_impl(GetProxy(&factory));
 
   sample::RequestPtr request(sample::Request::New());
   request->x = 1;
@@ -228,7 +241,7 @@ struct DoStuff2Callback {
 // Verifies DataPipeConsumer can be passed and read from.
 TEST_F(HandlePassingTest, DataPipe) {
   sample::FactoryPtr factory;
-  BindToProxy(new SampleFactoryImpl(), &factory);
+  SampleFactoryImpl factory_impl(GetProxy(&factory));
 
   // Writes a string to a data pipe and passes the data pipe (consumer) to the
   // factory.
@@ -264,7 +277,7 @@ TEST_F(HandlePassingTest, DataPipe) {
 
 TEST_F(HandlePassingTest, PipesAreClosed) {
   sample::FactoryPtr factory;
-  BindToProxy(new SampleFactoryImpl(), &factory);
+  SampleFactoryImpl factory_impl(GetProxy(&factory));
 
   MessagePipe extra_pipe;
 
@@ -305,7 +318,7 @@ TEST_F(HandlePassingTest, IsHandle) {
 
 TEST_F(HandlePassingTest, CreateNamedObject) {
   sample::FactoryPtr factory;
-  BindToProxy(new SampleFactoryImpl(), &factory);
+  SampleFactoryImpl factory_impl(GetProxy(&factory));
 
   sample::NamedObjectPtr object1;
   EXPECT_FALSE(object1);

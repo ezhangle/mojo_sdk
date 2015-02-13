@@ -49,11 +49,15 @@ RunnableImpl<Method, Class> MakeRunnable(Method method, Class object) {
 
 typedef mojo::Callback<void(double)> CalcCallback;
 
-class MathCalculatorImpl : public InterfaceImpl<math::Calculator> {
+class MathCalculatorImpl : public math::Calculator {
  public:
+  explicit MathCalculatorImpl(InterfaceRequest<math::Calculator> request)
+      : total_(0.0), binding_(this, request.Pass()) {}
   ~MathCalculatorImpl() override {}
 
-  MathCalculatorImpl() : total_(0.0) {}
+  void CloseMessagePipe() { binding_.Close(); }
+
+  void WaitForIncomingMethodCall() { binding_.WaitForIncomingMethodCall(); }
 
   void Clear(const CalcCallback& callback) override {
     total_ = 0.0;
@@ -72,6 +76,7 @@ class MathCalculatorImpl : public InterfaceImpl<math::Calculator> {
 
  private:
   double total_;
+  Binding<math::Calculator> binding_;
 };
 
 class MathCalculatorUI {
@@ -142,11 +147,12 @@ class SelfDestructingMathCalculatorUI {
 // static
 int SelfDestructingMathCalculatorUI::num_instances_ = 0;
 
-class ReentrantServiceImpl : public InterfaceImpl<sample::Service> {
+class ReentrantServiceImpl : public sample::Service {
  public:
   ~ReentrantServiceImpl() override {}
 
-  ReentrantServiceImpl() : call_depth_(0), max_call_depth_(0) {}
+  explicit ReentrantServiceImpl(InterfaceRequest<sample::Service> request)
+      : call_depth_(0), max_call_depth_(0), binding_(this, request.Pass()) {}
 
   int max_call_depth() { return max_call_depth_; }
 
@@ -156,7 +162,7 @@ class ReentrantServiceImpl : public InterfaceImpl<sample::Service> {
                  const sample::Service::FrobinateCallback& callback) override {
     max_call_depth_ = std::max(++call_depth_, max_call_depth_);
     if (call_depth_ == 1) {
-      EXPECT_TRUE(WaitForIncomingMethodCall());
+      EXPECT_TRUE(binding_.WaitForIncomingMethodCall());
     }
     call_depth_--;
     callback.Run(5);
@@ -167,6 +173,7 @@ class ReentrantServiceImpl : public InterfaceImpl<sample::Service> {
  private:
   int call_depth_;
   int max_call_depth_;
+  Binding<sample::Service> binding_;
 };
 
 class InterfacePtrTest : public testing::Test {
@@ -182,7 +189,7 @@ class InterfacePtrTest : public testing::Test {
 
 TEST_F(InterfacePtrTest, EndToEnd) {
   math::CalculatorPtr calc;
-  BindToProxy(new MathCalculatorImpl(), &calc);
+  MathCalculatorImpl calc_impl(GetProxy(&calc));
 
   // Suppose this is instantiated in a process that has pipe1_.
   MathCalculatorUI calculator_ui(calc.Pass());
@@ -197,7 +204,7 @@ TEST_F(InterfacePtrTest, EndToEnd) {
 
 TEST_F(InterfacePtrTest, EndToEnd_Synchronous) {
   math::CalculatorPtr calc;
-  MathCalculatorImpl* impl = BindToProxy(new MathCalculatorImpl(), &calc);
+  MathCalculatorImpl calc_impl(GetProxy(&calc));
 
   // Suppose this is instantiated in a process that has pipe1_.
   MathCalculatorUI calculator_ui(calc.Pass());
@@ -206,13 +213,13 @@ TEST_F(InterfacePtrTest, EndToEnd_Synchronous) {
 
   calculator_ui.Add(2.0);
   EXPECT_EQ(0.0, calculator_ui.GetOutput());
-  impl->WaitForIncomingMethodCall();
+  calc_impl.WaitForIncomingMethodCall();
   calculator_ui.WaitForIncomingMethodCall();
   EXPECT_EQ(2.0, calculator_ui.GetOutput());
 
   calculator_ui.Multiply(5.0);
   EXPECT_EQ(2.0, calculator_ui.GetOutput());
-  impl->WaitForIncomingMethodCall();
+  calc_impl.WaitForIncomingMethodCall();
   calculator_ui.WaitForIncomingMethodCall();
   EXPECT_EQ(10.0, calculator_ui.GetOutput());
 }
@@ -220,7 +227,7 @@ TEST_F(InterfacePtrTest, EndToEnd_Synchronous) {
 TEST_F(InterfacePtrTest, Movable) {
   math::CalculatorPtr a;
   math::CalculatorPtr b;
-  BindToProxy(new MathCalculatorImpl(), &b);
+  MathCalculatorImpl calc_impl(GetProxy(&b));
 
   EXPECT_TRUE(!a);
   EXPECT_FALSE(!b);
@@ -256,7 +263,7 @@ TEST_F(InterfacePtrTest, Resettable) {
 
 TEST_F(InterfacePtrTest, EncounteredError) {
   math::CalculatorPtr proxy;
-  MathCalculatorImpl* server = BindToProxy(new MathCalculatorImpl(), &proxy);
+  MathCalculatorImpl calc_impl(GetProxy(&proxy));
 
   MathCalculatorUI calculator_ui(proxy.Pass());
 
@@ -269,7 +276,7 @@ TEST_F(InterfacePtrTest, EncounteredError) {
   EXPECT_FALSE(calculator_ui.encountered_error());
 
   // Close the server.
-  server->internal_router()->CloseMessagePipe();
+  calc_impl.CloseMessagePipe();
 
   // The state change isn't picked up locally yet.
   EXPECT_FALSE(calculator_ui.encountered_error());
@@ -282,7 +289,7 @@ TEST_F(InterfacePtrTest, EncounteredError) {
 
 TEST_F(InterfacePtrTest, EncounteredErrorCallback) {
   math::CalculatorPtr proxy;
-  MathCalculatorImpl* server = BindToProxy(new MathCalculatorImpl(), &proxy);
+  MathCalculatorImpl calc_impl(GetProxy(&proxy));
 
   ErrorObserver error_observer;
   proxy.set_error_handler(&error_observer);
@@ -298,7 +305,7 @@ TEST_F(InterfacePtrTest, EncounteredErrorCallback) {
   EXPECT_FALSE(calculator_ui.encountered_error());
 
   // Close the server.
-  server->internal_router()->CloseMessagePipe();
+  calc_impl.CloseMessagePipe();
 
   // The state change isn't picked up locally yet.
   EXPECT_FALSE(calculator_ui.encountered_error());
@@ -315,7 +322,7 @@ TEST_F(InterfacePtrTest, EncounteredErrorCallback) {
 
 TEST_F(InterfacePtrTest, DestroyInterfacePtrOnMethodResponse) {
   math::CalculatorPtr proxy;
-  BindToProxy(new MathCalculatorImpl(), &proxy);
+  MathCalculatorImpl calc_impl(GetProxy(&proxy));
 
   EXPECT_EQ(0, SelfDestructingMathCalculatorUI::num_instances());
 
@@ -330,7 +337,7 @@ TEST_F(InterfacePtrTest, DestroyInterfacePtrOnMethodResponse) {
 
 TEST_F(InterfacePtrTest, NestedDestroyInterfacePtrOnMethodResponse) {
   math::CalculatorPtr proxy;
-  BindToProxy(new MathCalculatorImpl(), &proxy);
+  MathCalculatorImpl calc_impl(GetProxy(&proxy));
 
   EXPECT_EQ(0, SelfDestructingMathCalculatorUI::num_instances());
 
@@ -345,7 +352,7 @@ TEST_F(InterfacePtrTest, NestedDestroyInterfacePtrOnMethodResponse) {
 
 TEST_F(InterfacePtrTest, ReentrantWaitForIncomingMethodCall) {
   sample::ServicePtr proxy;
-  ReentrantServiceImpl* impl = BindToProxy(new ReentrantServiceImpl(), &proxy);
+  ReentrantServiceImpl impl(GetProxy(&proxy));
 
   proxy->Frobinate(nullptr, sample::Service::BAZ_OPTIONS_REGULAR, nullptr,
                    sample::Service::FrobinateCallback());
@@ -354,7 +361,7 @@ TEST_F(InterfacePtrTest, ReentrantWaitForIncomingMethodCall) {
 
   PumpMessages();
 
-  EXPECT_EQ(2, impl->max_call_depth());
+  EXPECT_EQ(2, impl.max_call_depth());
 }
 
 class StrongMathCalculatorImpl : public math::Calculator, public ErrorHandler {
