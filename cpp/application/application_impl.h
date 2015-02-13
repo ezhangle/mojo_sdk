@@ -52,10 +52,15 @@ class ApplicationDelegate;
 //
 class ApplicationImpl : public Application {
  public:
+  // Does not take ownership of |delegate|, which must remain valid for the
+  // lifetime of ApplicationImpl.
   ApplicationImpl(ApplicationDelegate* delegate,
                   InterfaceRequest<Application> request);
   ~ApplicationImpl() override;
 
+  // The Mojo shell. This will return a valid pointer after Initialize() has
+  // been invoked. It will remain valid until UnbindConnections() is invoked or
+  // the ApplicationImpl is destroyed.
   Shell* shell() const { return shell_.get(); }
 
   const std::string& url() const { return url_; }
@@ -64,7 +69,11 @@ class ApplicationImpl : public Application {
   const std::vector<std::string>& args() const { return args_; }
   bool HasArg(const std::string& arg) const;
 
-  // Establishes a new connection to an application. Caller does not own.
+  // Requests a new connection to an application. Returns a pointer to the
+  // connection if the connection is permitted by this application's delegate,
+  // or nullptr otherwise. Caller does not take ownership. The pointer remains
+  // valid until an error occurs on the connection with the Shell, or until the
+  // ApplicationImpl is destroyed, whichever occurs first.
   ApplicationConnection* ConnectToApplication(const String& application_url);
 
   // Connect to application identified by |application_url| and connect to the
