@@ -10,6 +10,12 @@ if (!defined(use_prebuilt_mojo_shell) || use_prebuilt_mojo_shell) {
   use_prebuilt_mojo_shell = is_linux || is_android
 }
 
+# If using the prebuilt network service, gate its usage by the platforms for
+# which it is published.
+if (!defined(use_prebuilt_network_service) || use_prebuilt_network_service) {
+  use_prebuilt_network_service = is_linux || is_android
+}
+
 # The absolute path to the directory containing the mojo public SDK (i.e., the
 # directory containing mojo/public). The build files within the Mojo public
 # SDK use this variable to allow themselves to be parameterized by the location

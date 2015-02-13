@@ -20,7 +20,7 @@ if not sys.platform.startswith("linux"):
   sys.exit(0)
 
 CURRENT_PATH = os.path.dirname(os.path.realpath(__file__))
-PREBUILT_FILE_PATH = os.path.join(CURRENT_PATH, "prebuilt")
+PREBUILT_FILE_PATH = os.path.join(CURRENT_PATH, "prebuilt", "shell")
 
 
 def download(tools_directory):
@@ -83,11 +83,12 @@ def download_version_for_platform(version, platform, tools_directory):
       sys.exit(1)
 
     binary_name = BINARY_FOR_PLATFORM[platform]
+    output_dir = os.path.join(PREBUILT_FILE_PATH, platform)
     with zipfile.ZipFile(temp_zip_file.name) as z:
       zi = z.getinfo(binary_name)
       mode = zi.external_attr >> 16
-      z.extract(zi, PREBUILT_FILE_PATH)
-      os.chmod(os.path.join(PREBUILT_FILE_PATH, binary_name), mode)
+      z.extract(zi, output_dir)
+      os.chmod(os.path.join(output_dir, binary_name), mode)
 
 
 def main():
