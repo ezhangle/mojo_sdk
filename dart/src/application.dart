@@ -88,6 +88,13 @@ abstract class Application {
 
   void initialize(List<String> args, String url) {}
 
+  // TODO(skydart): This is a temporary fix to allow sky application to consume
+  // mojo services. Do not use for any other purpose.
+  void initializeFromShellProxy(shell_mojom.ShellProxy shellProxy,
+      List<String> args, String url) {
+    _applicationImpl.initialize(shellProxy, args, url);
+  }
+
   // Establishes a connection to the app at |url|.
   ApplicationConnection connectToApplication(String url) {
     var serviceProviderProxy =
