@@ -297,6 +297,8 @@ struct MultiVersionStruct {
   array<int8> f_array;
   [MinVersion=7]
   handle<message_pipe>? f_message_pipe;
+  [MinVersion=7]
+  bool f_bool;
   [MinVersion=9]
   int16 f_int16;
 };
@@ -344,4 +346,6 @@ struct MultiVersionStructV7 {
   array<int8> f_array;
   [MinVersion=7]
   handle<message_pipe>? f_message_pipe;
+  [MinVersion=7]
+  bool f_bool;
 };
