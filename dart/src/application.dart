@@ -19,9 +19,8 @@ class _ApplicationImpl extends application_mojom.Application {
     super.delegate = this;
   }
 
-  void initialize(shell_mojom.ShellProxy shellProxy,
-                  List<String> args,
-                  String url) {
+  void initialize(
+      shell_mojom.ShellProxy shellProxy, List<String> args, String url) {
     assert(shell == null);
     shell = shellProxy;
     _application.initialize(args, url);
@@ -29,8 +28,8 @@ class _ApplicationImpl extends application_mojom.Application {
 
   void acceptConnection(
       String requestorUrl,
-      service_provider.ServiceProviderStub services,
-      service_provider.ServiceProviderProxy exposedServices) =>
+      ServiceProviderStub services,
+      ServiceProviderProxy exposedServices) =>
       _application._acceptConnection(requestorUrl, services, exposedServices);
 
   void requestQuit() => _application._requestQuitAndClose();
@@ -38,51 +37,22 @@ class _ApplicationImpl extends application_mojom.Application {
   void close({bool nodefer: false}) => shell.close();
 }
 
-// ApplicationConnection represents a single outgoing connection to another app.
-class ApplicationConnection {
-  // ServiceProvider used to obtain services from the remote application.
-  service_provider.ServiceProviderProxy serviceProvider;
-
-  ApplicationConnection(this.serviceProvider);
-
-  // Obtains a service from the remote application.
-  void connectToService(bindings.Proxy proxy) {
-    assert(!proxy.isBound);
-    var applicationPipe = new core.MojoMessagePipe();
-    var proxyEndpoint = applicationPipe.endpoints[0];
-    var applicationEndpoint = applicationPipe.endpoints[1];
-    proxy.bind(proxyEndpoint);
-    serviceProvider.connectToService(proxy.name, applicationEndpoint);
-  }
-}
-
 // TODO(zra): Better documentation and examples.
 // To implement, do the following:
+// - Optionally override initialize() to process command-line args.
 // - Optionally override acceptConnection() if services are to be provided.
-//   The override should configure the supplied ServiceProvider and call
-//   listen(). See ServiceProvider for details on how to configure it.
-// - Optionally override initialize() where needed.
-// - Optionally override requestClose() to clean up state specific to your
-//   application.
-// To use an Application:
-// - Call listen() on a newly created Application to begin providing services.
-// - Call connectToService() to request services from the Shell.
-// - Call close() to close connections to any requested ServiceProviders and the
-//   Shell.
+// - Optionally override close() to clean up application resources.
 abstract class Application {
   _ApplicationImpl _applicationImpl;
   List<ApplicationConnection> _applicationConnections;
-  List<ServiceProvider> _serviceProviders;
 
   Application(core.MojoMessagePipeEndpoint endpoint) {
     _applicationConnections = [];
-    _serviceProviders = [];
     _applicationImpl = new _ApplicationImpl(this, endpoint);
   }
 
   Application.fromHandle(core.MojoHandle appHandle) {
     _applicationConnections = [];
-    _serviceProviders = [];
     _applicationImpl = new _ApplicationImpl.fromHandle(this, appHandle);
   }
 
@@ -95,20 +65,18 @@ abstract class Application {
     _applicationImpl.initialize(shellProxy, args, url);
   }
 
-  // Establishes a connection to the app at |url|.
+  // Returns a connection to the app at |url|.
   ApplicationConnection connectToApplication(String url) {
-    var serviceProviderProxy =
-        new service_provider.ServiceProviderProxy.unbound();
-    // TODO: Need to expose ServiceProvider for local services.
-    _applicationImpl.shell.connectToApplication(
-        url, serviceProviderProxy, null);
-    var applicationConnection = new ApplicationConnection(serviceProviderProxy);
-    _applicationConnections.add(applicationConnection);
-    return applicationConnection;
+    var proxy = new ServiceProviderProxy.unbound();
+    var stub = new ServiceProviderStub.unbound();
+    _applicationImpl.shell.connectToApplication(url, proxy, stub);
+    var connection = new ApplicationConnection(stub, proxy);
+    _applicationConnections.add(connection);
+    return connection;
   }
 
   void connectToService(String url, bindings.Proxy proxy) {
-    connectToApplication(url).connectToService(proxy);
+    connectToApplication(url).requestService(proxy);
   }
 
   void requestQuit() {}
@@ -122,24 +90,23 @@ abstract class Application {
 
   void close() {
     assert(_applicationImpl != null);
-    _applicationConnections.forEach((c) => c.serviceProvider.close());
+    _applicationConnections.forEach((c) => c.close());
     _applicationConnections.clear();
-    _serviceProviders.forEach((sp) => sp.close());
-    _serviceProviders.clear();
     _applicationImpl.close();
   }
 
   void _acceptConnection(
       String requestorUrl,
-      service_provider.ServiceProviderStub services,
-      service_provider.ServiceProviderProxy exposedServices) {
-    var serviceProvider = new ServiceProvider(services, exposedServices);
-    _serviceProviders.add(serviceProvider);
-    acceptConnection(requestorUrl, serviceProvider);
+      ServiceProviderStub services,
+      ServiceProviderProxy exposedServices) {
+    var connection = new ApplicationConnection(services, exposedServices);
+    _applicationConnections.add(connection);
+    acceptConnection(requestorUrl, connection);
   }
 
-  // Override to register the necessary set of interface on |serviceProvider|.
-  // If you register at least one interface (or set the fallback), then you
-  // must invoke serviceProvider.listen().
-  void acceptConnection(String requestorUrl, ServiceProvider serviceProvider) {}
+  // Override this method to provide services on |connection|.
+  // If you provide at least one service or set fallbackServiceProvider,
+  // then you must invoke connection.listen().
+  void acceptConnection(String requestorUrl, ApplicationConnection connection) {
+  }
 }
