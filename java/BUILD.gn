@@ -18,6 +18,7 @@ android_library("system") {
     "system/src/org/chromium/mojo/system/Pair.java",
     "system/src/org/chromium/mojo/system/SharedBufferHandle.java",
     "system/src/org/chromium/mojo/system/UntypedHandle.java",
+    "system/src/org/chromium/mojo/system/RunLoop.java",
   ]
 }
 
