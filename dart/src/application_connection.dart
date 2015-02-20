@@ -59,26 +59,26 @@ class LocalServiceProvider extends ServiceProvider {
 // with provideService().
 
 class ApplicationConnection {
-  ServiceProviderProxy _remoteServiceProvider;
+  ServiceProviderProxy remoteServiceProvider;
   LocalServiceProvider _localServiceProvider;
   final _nameToServiceFactory = new Map<String, ServiceFactory>();
   FallbackServiceFactory fallbackServiceFactory;
 
   ApplicationConnection(ServiceProviderStub stub, ServiceProviderProxy proxy)
-      : _remoteServiceProvider = proxy {
+      : remoteServiceProvider = proxy {
     if (stub != null) _localServiceProvider =
         new LocalServiceProvider(this, stub);
   }
 
   bindings.Proxy requestService(bindings.Proxy proxy) {
     assert(!proxy.isBound &&
-        (_remoteServiceProvider != null) &&
-        _remoteServiceProvider.isBound);
+        (remoteServiceProvider != null) &&
+        remoteServiceProvider.isBound);
     var applicationPipe = new core.MojoMessagePipe();
     var proxyEndpoint = applicationPipe.endpoints[0];
     var applicationEndpoint = applicationPipe.endpoints[1];
     proxy.bind(proxyEndpoint);
-    _remoteServiceProvider.connectToService(proxy.name, applicationEndpoint);
+    remoteServiceProvider.connectToService(proxy.name, applicationEndpoint);
     return proxy;
   }
 
@@ -92,9 +92,9 @@ class ApplicationConnection {
   }
 
   void close({bool nodefer: false}) {
-    if (_remoteServiceProvider != null) {
-      _remoteServiceProvider.close();
-      _remoteServiceProvider = null;
+    if (remoteServiceProvider != null) {
+      remoteServiceProvider.close();
+      remoteServiceProvider = null;
     }
     if (_localServiceProvider != null) {
       _localServiceProvider.close(nodefer: nodefer);
