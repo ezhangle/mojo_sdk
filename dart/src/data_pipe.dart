@@ -93,7 +93,7 @@ class MojoDataPipeProducer {
 class MojoDataPipeConsumer {
   static const int FLAG_NONE = 0;
   static const int FLAG_ALL_OR_NONE = 1 << 0;
-  static const int FLAG_MAY_DISCARD = 1 << 1;
+  static const int FLAG_DISCARD = 1 << 1;
   static const int FLAG_QUERY = 1 << 2;
   static const int FLAG_PEEK = 1 << 3;
 
