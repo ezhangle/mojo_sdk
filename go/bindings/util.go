@@ -4,6 +4,12 @@
 
 package bindings
 
+import (
+	"fmt"
+
+	"mojo/public/go/system"
+)
+
 func align(size, alignment int) int {
 	return ((size - 1) | (alignment - 1)) + 1
 }
@@ -12,6 +18,15 @@ func align(size, alignment int) int {
 // number of bits.
 func bytesForBits(bits uint64) int {
 	return int((bits + 7) / 8)
+}
+
+// WriteMessage writes a message to a message pipe.
+func WriteMessage(handle system.MessagePipeHandle, message *Message) error {
+	result := handle.WriteMessage(message.Bytes, message.Handles, system.MOJO_WRITE_MESSAGE_FLAG_NONE)
+	if result != system.MOJO_RESULT_OK {
+		return fmt.Errorf("error writing message: %v", result)
+	}
+	return nil
 }
 
 // StringPointer converts provided string to *string.
