@@ -156,7 +156,6 @@ class MojoDataPipeConsumer {
 
 class MojoDataPipe {
   static const int FLAG_NONE = 0;
-  static const int FLAG_MAY_DISCARD = 1 << 0;
   static const int DEFAULT_ELEMENT_SIZE = 1;
   static const int DEFAULT_CAPACITY = 0;
 
