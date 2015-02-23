@@ -6,6 +6,7 @@ package bindings
 
 import (
 	"fmt"
+	"sync/atomic"
 
 	"mojo/public/go/system"
 )
@@ -32,4 +33,15 @@ func WriteMessage(handle system.MessagePipeHandle, message *Message) error {
 // StringPointer converts provided string to *string.
 func StringPointer(s string) *string {
 	return &s
+}
+
+// Counter is a simple thread-safe lock-free counter that can issue unique
+// numbers starting from 1 to callers.
+type Counter struct {
+	last uint64
+}
+
+// Next returns next unused value, each value is returned only once.
+func (c *Counter) Next() uint64 {
+	return atomic.AddUint64(&c.last, 1)
 }
