@@ -49,6 +49,7 @@ class InterfacePtrState {
     MOJO_DCHECK(!router_);
     MOJO_DCHECK(!handle_.is_valid());
     MOJO_DCHECK(!waiter_);
+    MOJO_DCHECK(handle.is_valid());
 
     handle_ = handle.Pass();
     waiter_ = waiter;

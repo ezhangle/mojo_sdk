@@ -60,11 +60,15 @@ class InterfacePtr {
   // implementation of Interface. The |waiter| is used for receiving
   // notifications when there is data to read from the message pipe. For most
   // callers, the default |waiter| will be sufficient.
+  //
+  // Calling with an invalid |handle| has the same effect as reset(). In this
+  // case, the InterfacePtr is not considered as bound.
   void Bind(
       ScopedMessagePipeHandle handle,
       const MojoAsyncWaiter* waiter = Environment::GetDefaultAsyncWaiter()) {
     reset();
-    internal_state_.Bind(handle.Pass(), waiter);
+    if (handle.is_valid())
+      internal_state_.Bind(handle.Pass(), waiter);
   }
 
   // Returns a raw pointer to the local proxy. Caller does not take ownership.
