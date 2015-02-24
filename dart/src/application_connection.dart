@@ -74,11 +74,9 @@ class ApplicationConnection {
     assert(!proxy.isBound &&
         (remoteServiceProvider != null) &&
         remoteServiceProvider.isBound);
-    var applicationPipe = new core.MojoMessagePipe();
-    var proxyEndpoint = applicationPipe.endpoints[0];
-    var applicationEndpoint = applicationPipe.endpoints[1];
-    proxy.bind(proxyEndpoint);
-    remoteServiceProvider.connectToService(proxy.name, applicationEndpoint);
+    var pipe = new core.MojoMessagePipe();
+    proxy.bind(pipe.endpoints[0]);
+    remoteServiceProvider.connectToService(proxy.name, pipe.endpoints[1]);
     return proxy;
   }
 
