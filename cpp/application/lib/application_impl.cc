@@ -108,6 +108,7 @@ void ApplicationImpl::AcceptConnection(
 }
 
 void ApplicationImpl::RequestQuit() {
+  delegate_->Quit();
   Terminate();
 }
 
