@@ -107,7 +107,7 @@ class MojoDataPipeConsumer {
   int read(ByteData data, [int numBytes = -1, int flags = 0]) {
     if (handle == null) {
       status = MojoResult.INVALID_ARGUMENT;
-      return status;
+      return 0;
     }
 
     int data_numBytes = (numBytes == -1) ? data.lengthInBytes : numBytes;
@@ -115,7 +115,7 @@ class MojoDataPipeConsumer {
         handle.h, data, data_numBytes, flags);
     if (result == null) {
       status = MojoResult.INVALID_ARGUMENT;
-      return status;
+      return 0;
     }
     assert((result is List) && (result.length == 2));
     status = new MojoResult(result[0]);

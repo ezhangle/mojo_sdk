@@ -132,7 +132,7 @@ class Encoder {
 
   void encodeUint8(int value, int offset) {
     if (value < 0) {
-      throw new MojoCodecError('$kErrorUnsigned: $val');
+      throw new MojoCodecError('$kErrorUnsigned: $value');
     }
     _buffer.buffer.setUint8(_base + offset, value);
   }
@@ -142,7 +142,7 @@ class Encoder {
 
   void encodeUint16(int value, int offset) {
     if (value < 0) {
-      throw new MojoCodecError('$kErrorUnsigned: $val');
+      throw new MojoCodecError('$kErrorUnsigned: $value');
     }
     _buffer.buffer.setUint16(_base + offset, value, Endianness.LITTLE_ENDIAN);
   }
@@ -152,7 +152,7 @@ class Encoder {
 
   void encodeUint32(int value, int offset) {
     if (value < 0) {
-      throw new MojoCodecError('$kErrorUnsigned: $val');
+      throw new MojoCodecError('$kErrorUnsigned: $value');
     }
     _buffer.buffer.setUint32(_base + offset, value, Endianness.LITTLE_ENDIAN);
   }
@@ -162,7 +162,7 @@ class Encoder {
 
   void encodeUint64(int value, int offset) {
     if (value < 0) {
-      throw new MojoCodecError('$kErrorUnsigned: $val');
+      throw new MojoCodecError('$kErrorUnsigned: $value');
     }
     _buffer.buffer.setUint64(_base + offset, value, Endianness.LITTLE_ENDIAN);
   }
@@ -483,10 +483,10 @@ class Encoder {
   void appendUint64Array(List<int> value) =>
       appendBytes(new Uint8List.view(new Uint64List.fromList(value).buffer));
 
-  void appendFloatArray(List<int> value) =>
+  void appendFloatArray(List<double> value) =>
       appendBytes(new Uint8List.view(new Float32List.fromList(value).buffer));
 
-  void appendDoubleArray(List<int> value) =>
+  void appendDoubleArray(List<double> value) =>
       appendBytes(new Uint8List.view(new Float64List.fromList(value).buffer));
 
   Encoder encoderForMap(int offset) {
