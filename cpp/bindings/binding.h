@@ -112,6 +112,7 @@ class Binding : public ErrorHandler {
   void Bind(
       ScopedMessagePipeHandle handle,
       const MojoAsyncWaiter* waiter = Environment::GetDefaultAsyncWaiter()) {
+    MOJO_DCHECK(!internal_router_);
     internal::FilterChain filters;
     filters.Append<internal::MessageHeaderValidator>();
     filters.Append<typename Interface::RequestValidator_>();
