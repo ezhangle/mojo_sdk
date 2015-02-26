@@ -4,7 +4,7 @@
 
 part of core;
 
-class MojoEventStream extends Stream<int> {
+class MojoEventStream extends Stream<List<int>> {
   // The underlying Mojo handle.
   MojoHandle _handle;
 
@@ -127,7 +127,7 @@ abstract class Listener {
   StreamSubscription<List<int>> listen({Function onClosed});
 }
 
-class MojoEventStreamListener implements Listener {
+class MojoEventStreamListener {
   MojoMessagePipeEndpoint _endpoint;
   MojoEventStream _eventStream;
   bool _isOpen = false;

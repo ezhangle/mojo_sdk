@@ -208,13 +208,13 @@ class Encoder {
     encodeMessagePipeHandle(pipe.endpoints[1], offset, nullable);
   }
 
-  void encodeInterfaceRequest(Proxy client, int offset, bool nullable) {
+  void encodeInterfaceRequest(ProxyBase client, int offset, bool nullable) {
     if (client == null) {
       encodeInvalideHandle(offset, nullable);
       return;
     }
     var pipe = new core.MojoMessagePipe();
-    client.bind(pipe.endpoints[0]);
+    client.impl.bind(pipe.endpoints[0]);
     encodeMessagePipeHandle(pipe.endpoints[1], offset, nullable);
   }
 
@@ -601,7 +601,7 @@ class Decoder {
   core.MojoSharedBuffer decodeSharedBufferHandle(int offset, bool nullable) =>
       new core.MojoSharedBuffer(decodeHandle(offset, nullable));
 
-  Proxy decodeServiceInterface(
+  ProxyBase decodeServiceInterface(
       int offset, bool nullable, Function clientFactory) {
     var endpoint = decodeMessagePipeHandle(offset, nullable);
     return endpoint.handle.isValid ? clientFactory(endpoint) : null;
@@ -697,7 +697,7 @@ class Decoder {
   ArrayDataHeader decodeDataHeaderForArray(int elementSize,
                                            int expectedLength) {
     var header = decodeArrayDataHeader();
-    var arrayByteCount = 
+    var arrayByteCount =
         ArrayDataHeader.kHeaderSize + header.numElements * elementSize;
     if (header.size < arrayByteCount) {
       throw new MojoCodecError(
