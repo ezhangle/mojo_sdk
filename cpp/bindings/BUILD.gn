@@ -9,6 +9,7 @@ mojo_sdk_source_set("bindings") {
     "array.h",
     "binding.h",
     "error_handler.h",
+    "interface_ptr_info.h",
     "interface_ptr.h",
     "map.h",
     "message.h",
