@@ -14,4 +14,16 @@ if (is_nacl) {
     ]
     mojo_sdk_deps = [ "mojo/public/c/system" ]
   }
+
+  mojo_sdk_source_set("system") {
+    sources = [
+      "mojo_initial_handle.h",
+      "mojo_main_thunk.cc",
+    ]
+
+    mojo_sdk_deps = [
+      "mojo/public/c/system",
+      "mojo/public/platform/nacl:mojo",
+    ]
+  }
 }
