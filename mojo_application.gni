@@ -254,6 +254,13 @@ template("mojo_native_application") {
     }
 
     action(target_name) {
+      if (defined(invoker.testonly)) {
+        testonly = invoker.testonly
+      }
+      if (defined(invoker.visibility)) {
+        visibility = invoker.visibility
+      }
+
       script = rebase_path("mojo/public/tools/prepend.py", ".", mojo_root)
 
       input_path = "${root_out_dir}/${nexe_name}"
