@@ -114,7 +114,8 @@ class ApplicationImpl : public Application {
   // Application implementation.
   void AcceptConnection(const String& requestor_url,
                         InterfaceRequest<ServiceProvider> services,
-                        ServiceProviderPtr exposed_services) override;
+                        ServiceProviderPtr exposed_services,
+                        const String& url) override;
 
   void RequestQuit() override;
 

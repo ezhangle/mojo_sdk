@@ -10,31 +10,30 @@ class _ApplicationImpl implements application_mojom.Application {
   Application _application;
 
   _ApplicationImpl(Application application,
-                   core.MojoMessagePipeEndpoint endpoint) {
+      core.MojoMessagePipeEndpoint endpoint) {
     _application = application;
     _stub = new application_mojom.ApplicationStub.fromEndpoint(endpoint)
-            ..delegate = this
-            ..listen();
+        ..delegate = this
+        ..listen();
   }
 
   _ApplicationImpl.fromHandle(Application application, core.MojoHandle handle) {
     _application = application;
     _stub = new application_mojom.ApplicationStub.fromHandle(handle)
-            ..delegate = this
-            ..listen();
+        ..delegate = this
+        ..listen();
   }
 
-  void initialize(
-      bindings.ProxyBase shellProxy, List<String> args, String url) {
+  void initialize(bindings.ProxyBase shellProxy, List<String> args,
+      String url) {
     assert(shell == null);
     shell = shellProxy;
     _application.initialize(args, url);
   }
 
-  void acceptConnection(String requestorUrl,
-                        ServiceProviderStub services,
-                        bindings.ProxyBase exposedServices) =>
-    _application._acceptConnection(requestorUrl, services,  exposedServices);
+  void acceptConnection(String requestorUrl, ServiceProviderStub services,
+      bindings.ProxyBase exposedServices, String requested_url) =>
+      _application._acceptConnection(requestorUrl, services, exposedServices);
 
   void requestQuit() => _application._requestQuitAndClose();
 
@@ -66,7 +65,7 @@ abstract class Application {
   // mojo services. Do not use for any other purpose.
   void initializeFromShellProxy(shell_mojom.ShellProxy shellProxy,
       List<String> args, String url) =>
-    _applicationImpl.initialize(shellProxy, args, url);
+      _applicationImpl.initialize(shellProxy, args, url);
 
   // Returns a connection to the app at |url|.
   ApplicationConnection connectToApplication(String url) {
@@ -96,9 +95,7 @@ abstract class Application {
     _applicationImpl.close();
   }
 
-  void _acceptConnection(
-      String requestorUrl,
-      ServiceProviderStub services,
+  void _acceptConnection(String requestorUrl, ServiceProviderStub services,
       ServiceProviderProxy exposedServices) {
     var connection = new ApplicationConnection(services, exposedServices);
     _applicationConnections.add(connection);
