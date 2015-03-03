@@ -139,7 +139,7 @@ template("dart_packaged_application") {
     }
 
     line = "#!mojo mojo:dart_content_handler"
-    if (defined(invoker.strict) && invoker.strict == true) {
+    if (is_debug || (defined(invoker.strict) && invoker.strict == true)) {
       line = "#!mojo mojo:dart_content_handler?strict=true"
     }
 
