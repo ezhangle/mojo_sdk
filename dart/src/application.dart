@@ -31,10 +31,13 @@ class _ApplicationImpl implements application_mojom.Application {
     _application.initialize(args, url);
   }
 
+  @override
   void acceptConnection(String requestorUrl, ServiceProviderStub services,
-      bindings.ProxyBase exposedServices, String requested_url) =>
-      _application._acceptConnection(requestorUrl, services, exposedServices);
+      bindings.ProxyBase exposedServices, String resolvedUrl) =>
+      _application._acceptConnection(requestorUrl, services, exposedServices,
+                                     resolvedUrl);
 
+  @override
   void requestQuit() => _application._requestQuitAndClose();
 
   void close({bool nodefer: false}) => shell.close();
@@ -96,15 +99,16 @@ abstract class Application {
   }
 
   void _acceptConnection(String requestorUrl, ServiceProviderStub services,
-      ServiceProviderProxy exposedServices) {
+      ServiceProviderProxy exposedServices, String resolvedUrl) {
     var connection = new ApplicationConnection(services, exposedServices);
     _applicationConnections.add(connection);
-    acceptConnection(requestorUrl, connection);
+    acceptConnection(requestorUrl, resolvedUrl, connection);
   }
 
   // Override this method to provide services on |connection|.
   // If you provide at least one service or set fallbackServiceProvider,
   // then you must invoke connection.listen().
-  void acceptConnection(String requestorUrl, ApplicationConnection connection) {
+  void acceptConnection(String requestorUrl, String resolvedUrl,
+                        ApplicationConnection connection) {
   }
 }
