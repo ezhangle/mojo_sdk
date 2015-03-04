@@ -169,7 +169,9 @@ class Binding : public ErrorHandler {
     InterfaceRequest<Interface> request =
         MakeRequest<Interface>(internal_router_->PassMessagePipe());
     DestroyRouter();
-    return request;
+    // TODO(vtl): The |.Pass()| below is only needed due to an MSVS bug; remove
+    // it once that's fixed.
+    return request.Pass();
   }
 
   // Sets an error handler that will be called if a connection error occurs on
