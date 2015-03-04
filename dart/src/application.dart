@@ -10,18 +10,23 @@ class _ApplicationImpl implements application_mojom.Application {
   Application _application;
 
   _ApplicationImpl(Application application,
-      core.MojoMessagePipeEndpoint endpoint) {
+      core.MojoMessagePipeEndpoint endpoint, {Function onClosed}) {
     _application = application;
-    _stub = new application_mojom.ApplicationStub.fromEndpoint(endpoint)
-        ..delegate = this
-        ..listen();
+    // We wrap the onClosed callback in a closure to ensure that all
+    // necessary cleanup is performed on a PEER_CLOSED signal.
+    _stub = new application_mojom.ApplicationStub.fromEndpoint(
+        endpoint,
+        impl: this,
+        onClosed: _closer(onClosed));
   }
 
-  _ApplicationImpl.fromHandle(Application application, core.MojoHandle handle) {
+  _ApplicationImpl.fromHandle(Application application, core.MojoHandle handle,
+      {Function onClosed}) {
     _application = application;
-    _stub = new application_mojom.ApplicationStub.fromHandle(handle)
-        ..delegate = this
-        ..listen();
+    _stub = new application_mojom.ApplicationStub.fromHandle(
+        handle,
+        impl: this,
+        onClosed: _closer(onClosed));
   }
 
   void initialize(bindings.ProxyBase shellProxy, List<String> args,
@@ -34,13 +39,28 @@ class _ApplicationImpl implements application_mojom.Application {
   @override
   void acceptConnection(String requestorUrl, ServiceProviderStub services,
       bindings.ProxyBase exposedServices, String resolvedUrl) =>
-      _application._acceptConnection(requestorUrl, services, exposedServices,
-                                     resolvedUrl);
+      _application._acceptConnection(
+          requestorUrl,
+          services,
+          exposedServices,
+          resolvedUrl);
 
   @override
   void requestQuit() => _application._requestQuitAndClose();
 
-  void close({bool nodefer: false}) => shell.close();
+  Function _closer(Function onClosed) {
+    return (() {
+      if (onClosed != null) {
+        onClosed();
+      }
+      close();
+    });
+  }
+
+  void close({bool nodefer: false}) {
+    shell.close();
+    _stub.close();
+  }
 }
 
 // TODO(zra): Better documentation and examples.
@@ -52,14 +72,18 @@ abstract class Application {
   _ApplicationImpl _applicationImpl;
   List<ApplicationConnection> _applicationConnections;
 
-  Application(core.MojoMessagePipeEndpoint endpoint) {
+  Application(core.MojoMessagePipeEndpoint endpoint, {Function onClosed}) {
     _applicationConnections = [];
-    _applicationImpl = new _ApplicationImpl(this, endpoint);
+    // We wrap the onClosed callback in a closure to ensure that all
+    // necessary cleanup is performed on a PEER_CLOSED signal.
+    _applicationImpl =
+        new _ApplicationImpl(this, endpoint, onClosed: _closer(onClosed));
   }
 
-  Application.fromHandle(core.MojoHandle appHandle) {
+  Application.fromHandle(core.MojoHandle appHandle, {Function onClosed}) {
     _applicationConnections = [];
-    _applicationImpl = new _ApplicationImpl.fromHandle(this, appHandle);
+    _applicationImpl =
+        new _ApplicationImpl.fromHandle(this, appHandle, onClosed: _closer(onClosed));
   }
 
   void initialize(List<String> args, String url) {}
@@ -91,6 +115,15 @@ abstract class Application {
     close();
   }
 
+  Function _closer(Function onClose) {
+    return (() {
+      if (onClose != null) {
+        onClose();
+      }
+      close();
+    });
+  }
+
   void close() {
     assert(_applicationImpl != null);
     _applicationConnections.forEach((c) => c.close());
@@ -109,6 +142,6 @@ abstract class Application {
   // If you provide at least one service or set fallbackServiceProvider,
   // then you must invoke connection.listen().
   void acceptConnection(String requestorUrl, String resolvedUrl,
-                        ApplicationConnection connection) {
+      ApplicationConnection connection) {
   }
 }

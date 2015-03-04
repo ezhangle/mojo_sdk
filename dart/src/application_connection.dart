@@ -14,12 +14,21 @@ class LocalServiceProvider implements ServiceProvider {
   ServiceProviderStub _stub;
 
   LocalServiceProvider(this.connection, this._stub) {
-    _stub.delegate = this;
+    _stub.impl = this;
   }
 
-  listen() => _stub.listen();
+  listen({Function onClosed}) => _stub.listen(onClosed: _closer(onClosed));
 
-  void close({bool nodefer : false}) => _stub.close(nodefer: nodefer);
+  Function _closer(Function onClosed) {
+    return (() {
+      if (onClosed != null) {
+        onClosed();
+      }
+      close();
+    });
+  }
+
+  void close({bool nodefer: false}) => _stub.close(nodefer: nodefer);
 
   void connectToService(String interfaceName,
       core.MojoMessagePipeEndpoint pipe) {
@@ -71,7 +80,7 @@ class ApplicationConnection {
   }
 
   FallbackServiceFactory get fallbackServiceFactory => _fallbackServiceFactory;
-                         set fallbackServiceFactory(FallbackServiceFactory f) {
+  set fallbackServiceFactory(FallbackServiceFactory f) {
     assert(_localServiceProvider != null);
     _fallbackServiceFactory = f;
   }
@@ -82,8 +91,7 @@ class ApplicationConnection {
         remoteServiceProvider.impl.isBound);
     var pipe = new core.MojoMessagePipe();
     proxy.impl.bind(pipe.endpoints[0]);
-    remoteServiceProvider.ptr.connectToService(
-        proxy.name, pipe.endpoints[1]);
+    remoteServiceProvider.ptr.connectToService(proxy.name, pipe.endpoints[1]);
     return proxy;
   }
 
@@ -92,9 +100,18 @@ class ApplicationConnection {
     _nameToServiceFactory[interfaceName] = factory;
   }
 
-  void listen() {
+  void listen({Function onClosed}) {
     assert(_localServiceProvider != null);
-    _localServiceProvider.listen();
+    _localServiceProvider.listen(onClosed: _closer(onClosed));
+  }
+
+  Function _closer(Function onClosed) {
+    return (() {
+      if (onClosed != null) {
+        onClosed();
+      }
+      close();
+    });
   }
 
   void close({bool nodefer: false}) {

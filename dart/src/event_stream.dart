@@ -132,16 +132,26 @@ class MojoEventStreamListener {
   MojoEventStream _eventStream;
   bool _isOpen = false;
   bool _isInHandler = false;
+  StreamSubscription subscription;
 
-  MojoEventStreamListener(MojoMessagePipeEndpoint endpoint)
+  MojoEventStreamListener.fromEndpoint(MojoMessagePipeEndpoint endpoint,
+      {bool doListen: true, Function onClosed})
       : _endpoint = endpoint,
         _eventStream = new MojoEventStream(endpoint.handle),
-        _isOpen = false;
+        _isOpen = false {
+    if (doListen) {
+      listen(onClosed: onClosed);
+    }
+  }
 
-  MojoEventStreamListener.fromHandle(MojoHandle handle) {
+  MojoEventStreamListener.fromHandle(MojoHandle handle, {bool doListen: true,
+      Function onClosed}) {
     _endpoint = new MojoMessagePipeEndpoint(handle);
     _eventStream = new MojoEventStream(handle);
     _isOpen = false;
+    if (doListen) {
+      listen(onClosed: onClosed);
+    }
   }
 
   MojoEventStreamListener.unbound()
@@ -164,8 +174,9 @@ class MojoEventStreamListener {
   }
 
   StreamSubscription<List<int>> listen({Function onClosed}) {
+    assert(isBound && (subscription == null));
     _isOpen = true;
-    return _eventStream.listen((List<int> event) {
+    subscription = _eventStream.listen((List<int> event) {
       var signalsWatched = new MojoHandleSignals(event[0]);
       var signalsReceived = new MojoHandleSignals(event[1]);
       if (signalsReceived.isPeerClosed) {
@@ -190,11 +201,13 @@ class MojoEventStreamListener {
       }
       _isInHandler = false;
     }, onDone: close);
+    return subscription;
   }
 
   void close() {
     _isOpen = false;
     _endpoint = null;
+    subscription = null;
     if (_eventStream != null) {
       _eventStream.close();
       _eventStream = null;

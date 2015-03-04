@@ -8,17 +8,19 @@ abstract class Proxy extends core.MojoEventStreamListener {
   Map<int, Completer> _completerMap;
   int _nextId = 0;
 
-  Proxy(core.MojoMessagePipeEndpoint endpoint) :
-      _completerMap = {},
-      super(endpoint);
+  Proxy.fromEndpoint(core.MojoMessagePipeEndpoint endpoint, {bool doListen:
+      true, Function onClosed})
+      : _completerMap = {},
+        super.fromEndpoint(endpoint, doListen: doListen, onClosed: onClosed);
 
-  Proxy.fromHandle(core.MojoHandle handle) :
-      _completerMap = {},
-      super.fromHandle(handle);
+  Proxy.fromHandle(core.MojoHandle handle, {bool doListen: true,
+      Function onClosed})
+      : _completerMap = {},
+        super.fromHandle(handle, doListen: doListen, onClosed: onClosed);
 
-  Proxy.unbound() :
-      _completerMap = {},
-      super.unbound();
+  Proxy.unbound()
+      : _completerMap = {},
+        super.unbound();
 
   void handleResponse(ServiceMessage reader);
 
@@ -46,16 +48,16 @@ abstract class Proxy extends core.MojoEventStreamListener {
     }
     var header = new MessageHeader(name);
     var serviceMessage = message.serializeWithHeader(header);
-    endpoint.write(serviceMessage.buffer,
-                   serviceMessage.buffer.lengthInBytes,
-                   serviceMessage.handles);
+    endpoint.write(
+        serviceMessage.buffer,
+        serviceMessage.buffer.lengthInBytes,
+        serviceMessage.handles);
     if (!endpoint.status.isOk) {
       throw "message pipe write failed - ${endpoint.status}";
     }
   }
 
-  Future sendMessageWithRequestId(
-      Struct message, int name, int id, int flags) {
+  Future sendMessageWithRequestId(Struct message, int name, int id, int flags) {
     if (!isOpen) {
       listen();
     }
@@ -65,9 +67,10 @@ abstract class Proxy extends core.MojoEventStreamListener {
 
     var header = new MessageHeader.withRequestId(name, flags, id);
     var serviceMessage = message.serializeWithHeader(header);
-    endpoint.write(serviceMessage.buffer,
-                   serviceMessage.buffer.lengthInBytes,
-                   serviceMessage.handles);
+    endpoint.write(
+        serviceMessage.buffer,
+        serviceMessage.buffer.lengthInBytes,
+        serviceMessage.handles);
     if (!endpoint.status.isOk) {
       throw "message pipe write failed - ${endpoint.status}";
     }
