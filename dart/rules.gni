@@ -123,9 +123,7 @@ template("dart_packaged_application") {
     ]
 
     deps = [
-      # TODO(erg): When dartanalyze runs at an acceptable speed, add
-      # ":$package_analyze_sources" as a dependency here and remove the
-      # manual group("check") in the toplevel build file.
+      ":$package_analyze_sources",
       ":$package_name",
     ]
     if (defined(invoker.deps)) {
