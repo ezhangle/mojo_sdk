@@ -131,6 +131,13 @@ abstract class Application {
     _applicationImpl.close();
   }
 
+  // This method closes all the application connections. Used during apptesting.
+  resetConnections() {
+    assert(_applicationImpl != null);
+    _applicationConnections.forEach((c) => c.close());
+    _applicationConnections.clear();
+  }
+
   void _acceptConnection(String requestorUrl, ServiceProviderStub services,
       ServiceProviderProxy exposedServices, String resolvedUrl) {
     var connection = new ApplicationConnection(services, exposedServices);
