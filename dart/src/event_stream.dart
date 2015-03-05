@@ -179,14 +179,6 @@ class MojoEventStreamListener {
     subscription = _eventStream.listen((List<int> event) {
       var signalsWatched = new MojoHandleSignals(event[0]);
       var signalsReceived = new MojoHandleSignals(event[1]);
-      if (signalsReceived.isPeerClosed) {
-        if (onClosed != null) onClosed();
-        close();
-        // The peer being closed obviates any other signal we might
-        // have received since we won't be able to read or write the handle.
-        // Thus, we just return before invoking other handlers.
-        return;
-      }
       _isInHandler = true;
       if (signalsReceived.isReadable) {
         assert(_eventStream.readyRead);
@@ -200,6 +192,14 @@ class MojoEventStreamListener {
         _eventStream.enableSignals(signalsWatched);
       }
       _isInHandler = false;
+      if (signalsReceived.isPeerClosed) {
+        if (onClosed != null) onClosed();
+        close();
+        // The peer being closed obviates any other signal we might
+        // have received since we won't be able to read or write the handle.
+        // Thus, we just return before invoking other handlers.
+        return;
+      }
     }, onDone: close);
     return subscription;
   }
