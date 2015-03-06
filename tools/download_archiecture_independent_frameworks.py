@@ -47,7 +47,7 @@ def download_file(basename, version, tools_directory):
   import find_depot_tools
   depot_tools_path = find_depot_tools.add_depot_tools_to_path()
 
-  gs_path = "gs://mojo/files/" + version + "/" + basename
+  gs_path = "gs://mojo/file/" + version + "/" + basename
 
   output_file = os.path.join(PREBUILT_FILE_PATH, basename)
   gs.download_from_public_bucket(gs_path, output_file,
