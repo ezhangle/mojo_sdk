@@ -7,12 +7,11 @@ part of core;
 class _MojoHandleNatives {
   static int register(MojoEventStream eventStream) native "MojoHandle_Register";
   static int close(int handle) native "MojoHandle_Close";
-  static List wait(int handle, int signals, int deadline) native
-      "MojoHandle_Wait";
+  static List wait(
+      int handle, int signals, int deadline) native "MojoHandle_Wait";
   static List waitMany(List<int> handles, List<int> signals,
       int deadline) native "MojoHandle_WaitMany";
 }
-
 
 class MojoHandle {
   static const int INVALID = 0;
@@ -52,13 +51,11 @@ class MojoHandle {
   bool get readyRead => _ready(MojoHandleSignals.PEER_CLOSED_READABLE);
   bool get readyWrite => _ready(MojoHandleSignals.WRITABLE);
 
-  static MojoWaitManyResult waitMany(List<int> handles, List<int> signals,
-      int deadline) {
+  static MojoWaitManyResult waitMany(
+      List<int> handles, List<int> signals, int deadline) {
     List result = _MojoHandleNatives.waitMany(handles, signals, deadline);
     return new MojoWaitManyResult(
-        new MojoResult(result[0]),
-        result[1],
-        result[2]);
+        new MojoResult(result[0]), result[1], result[2]);
   }
 
   static MojoResult register(MojoEventStream eventStream) {
@@ -67,7 +64,13 @@ class MojoHandle {
 
   bool get isValid => (h != INVALID);
 
-  String toString() => "$h";
+  String toString() {
+    if (!isValid) {
+      return "MojoHandle(INVALID)";
+    }
+    var mwr = wait(MojoHandleSignals.kAll, 0);
+    return "MojoHandle(h: $h, status: $mwr)";
+  }
 
   bool operator ==(MojoHandle other) {
     return h == other.h;

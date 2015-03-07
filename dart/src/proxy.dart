@@ -8,13 +8,13 @@ abstract class Proxy extends core.MojoEventStreamListener {
   Map<int, Completer> _completerMap;
   int _nextId = 0;
 
-  Proxy.fromEndpoint(core.MojoMessagePipeEndpoint endpoint, {bool doListen:
-      true, Function onClosed})
+  Proxy.fromEndpoint(core.MojoMessagePipeEndpoint endpoint,
+      {bool doListen: true, Function onClosed})
       : _completerMap = {},
         super.fromEndpoint(endpoint, doListen: doListen, onClosed: onClosed);
 
-  Proxy.fromHandle(core.MojoHandle handle, {bool doListen: true,
-      Function onClosed})
+  Proxy.fromHandle(core.MojoHandle handle,
+      {bool doListen: true, Function onClosed})
       : _completerMap = {},
         super.fromHandle(handle, doListen: doListen, onClosed: onClosed);
 
@@ -48,10 +48,8 @@ abstract class Proxy extends core.MojoEventStreamListener {
     }
     var header = new MessageHeader(name);
     var serviceMessage = message.serializeWithHeader(header);
-    endpoint.write(
-        serviceMessage.buffer,
-        serviceMessage.buffer.lengthInBytes,
-        serviceMessage.handles);
+    endpoint.write(serviceMessage.buffer,
+        serviceMessage.buffer.lengthInBytes, serviceMessage.handles);
     if (!endpoint.status.isOk) {
       throw "message pipe write failed - ${endpoint.status}";
     }
@@ -67,10 +65,8 @@ abstract class Proxy extends core.MojoEventStreamListener {
 
     var header = new MessageHeader.withRequestId(name, flags, id);
     var serviceMessage = message.serializeWithHeader(header);
-    endpoint.write(
-        serviceMessage.buffer,
-        serviceMessage.buffer.lengthInBytes,
-        serviceMessage.handles);
+    endpoint.write(serviceMessage.buffer,
+        serviceMessage.buffer.lengthInBytes, serviceMessage.handles);
     if (!endpoint.status.isOk) {
       throw "message pipe write failed - ${endpoint.status}";
     }
@@ -82,8 +78,12 @@ abstract class Proxy extends core.MojoEventStreamListener {
 
   // Need a getter for this for access in subclasses.
   Map<int, Completer> get completerMap => _completerMap;
-}
 
+  String toString() {
+    var superString = super.toString();
+    return "Proxy(${superString})";
+  }
+}
 
 // Generated Proxy classes implement this interface.
 abstract class ProxyBase {

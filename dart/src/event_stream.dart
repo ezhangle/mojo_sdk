@@ -26,8 +26,8 @@ class MojoEventStream extends Stream<List<int>> {
   // Whether listen has been called.
   bool _isListening;
 
-  MojoEventStream(MojoHandle handle, [MojoHandleSignals signals =
-      MojoHandleSignals.PEER_CLOSED_READABLE])
+  MojoEventStream(MojoHandle handle,
+      [MojoHandleSignals signals = MojoHandleSignals.PEER_CLOSED_READABLE])
       : _handle = handle,
         _signals = signals,
         _isListening = false {
@@ -75,11 +75,8 @@ class MojoEventStream extends Stream<List<int>> {
     }
 
     _isListening = true;
-    return _controller.stream.listen(
-        onData,
-        onError: onError,
-        onDone: onDone,
-        cancelOnError: cancelOnError);
+    return _controller.stream.listen(onData,
+        onError: onError, onDone: onDone, cancelOnError: cancelOnError);
   }
 
   void enableSignals(MojoHandleSignals signals) {
@@ -144,8 +141,8 @@ class MojoEventStreamListener {
     }
   }
 
-  MojoEventStreamListener.fromHandle(MojoHandle handle, {bool doListen: true,
-      Function onClosed}) {
+  MojoEventStreamListener.fromHandle(MojoHandle handle,
+      {bool doListen: true, Function onClosed}) {
     _endpoint = new MojoMessagePipeEndpoint(handle);
     _eventStream = new MojoEventStream(handle);
     _isOpen = false;
@@ -221,4 +218,7 @@ class MojoEventStreamListener {
   bool get isOpen => _isOpen;
   bool get isInHandler => _isInHandler;
   bool get isBound => _endpoint != null;
+
+  String toString() => "MojoEventStreamListener("
+      "isOpen: $isOpen, isBound: $isBound, endpoint: $_endpoint)";
 }

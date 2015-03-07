@@ -5,9 +5,8 @@
 part of application;
 
 typedef Object ServiceFactory(core.MojoMessagePipeEndpoint endpoint);
-typedef void FallbackServiceFactory(String interfaceName,
-    core.MojoMessagePipeEndpoint endpoint);
-
+typedef void FallbackServiceFactory(
+    String interfaceName, core.MojoMessagePipeEndpoint endpoint);
 
 class LocalServiceProvider implements ServiceProvider {
   final ApplicationConnection connection;
@@ -30,8 +29,8 @@ class LocalServiceProvider implements ServiceProvider {
 
   void close({bool nodefer: false}) => _stub.close(nodefer: nodefer);
 
-  void connectToService(String interfaceName,
-      core.MojoMessagePipeEndpoint pipe) {
+  void connectToService(
+      String interfaceName, core.MojoMessagePipeEndpoint pipe) {
     if (connection._nameToServiceFactory.containsKey(interfaceName)) {
       connection._nameToServiceFactory[interfaceName](pipe);
       return;
@@ -42,7 +41,7 @@ class LocalServiceProvider implements ServiceProvider {
     }
     // The specified interface isn't provided. Close the pipe so the
     // remote endpoint sees that we don't support this interface.
-    pipe.handle.close();
+    pipe.close();
   }
 }
 
@@ -123,6 +122,5 @@ class ApplicationConnection {
       _localServiceProvider.close(nodefer: nodefer);
       _localServiceProvider = null;
     }
-
   }
 }

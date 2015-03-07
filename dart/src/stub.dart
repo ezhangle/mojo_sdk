@@ -8,12 +8,12 @@ abstract class Stub extends core.MojoEventStreamListener {
   int _outstandingResponseFutures = 0;
   bool _isClosing = false;
 
-  Stub.fromEndpoint(core.MojoMessagePipeEndpoint endpoint, {bool doListen: true,
-      Function onClosed})
+  Stub.fromEndpoint(core.MojoMessagePipeEndpoint endpoint,
+      {bool doListen: true, Function onClosed})
       : super.fromEndpoint(endpoint, doListen: doListen, onClosed: onClosed);
 
-  Stub.fromHandle(core.MojoHandle handle, {bool doListen: true,
-      Function onClosed})
+  Stub.fromHandle(core.MojoHandle handle,
+      {bool doListen: true, Function onClosed})
       : super.fromHandle(handle, doListen: doListen, onClosed: onClosed);
 
   Stub.unbound() : super.unbound();
@@ -45,9 +45,7 @@ abstract class Stub extends core.MojoEventStreamListener {
         _outstandingResponseFutures--;
         if (isOpen) {
           endpoint.write(
-              response.buffer,
-              response.buffer.lengthInBytes,
-              response.handles);
+              response.buffer, response.buffer.lengthInBytes, response.handles);
           if (!endpoint.status.isOk) {
             throw 'message pipe write failed: ${endpoint.status}';
           }
@@ -96,5 +94,10 @@ abstract class Stub extends core.MojoEventStreamListener {
   Message buildResponseWithId(Struct response, int name, int id, int flags) {
     var header = new MessageHeader.withRequestId(name, flags, id);
     return response.serializeWithHeader(header);
+  }
+
+  String toString() {
+    var superString = super.toString();
+    return "Stub(${superString})";
   }
 }
