@@ -8,15 +8,13 @@ abstract class Proxy extends core.MojoEventStreamListener {
   Map<int, Completer> _completerMap;
   int _nextId = 0;
 
-  Proxy.fromEndpoint(core.MojoMessagePipeEndpoint endpoint,
-      {bool doListen: true, Function onClosed})
+  Proxy.fromEndpoint(core.MojoMessagePipeEndpoint endpoint)
       : _completerMap = {},
-        super.fromEndpoint(endpoint, doListen: doListen, onClosed: onClosed);
+        super.fromEndpoint(endpoint);
 
-  Proxy.fromHandle(core.MojoHandle handle,
-      {bool doListen: true, Function onClosed})
+  Proxy.fromHandle(core.MojoHandle handle)
       : _completerMap = {},
-        super.fromHandle(handle, doListen: doListen, onClosed: onClosed);
+        super.fromHandle(handle);
 
   Proxy.unbound()
       : _completerMap = {},

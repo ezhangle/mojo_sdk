@@ -8,13 +8,10 @@ abstract class Stub extends core.MojoEventStreamListener {
   int _outstandingResponseFutures = 0;
   bool _isClosing = false;
 
-  Stub.fromEndpoint(core.MojoMessagePipeEndpoint endpoint,
-      {bool doListen: true, Function onClosed})
-      : super.fromEndpoint(endpoint, doListen: doListen, onClosed: onClosed);
+  Stub.fromEndpoint(core.MojoMessagePipeEndpoint endpoint)
+      : super.fromEndpoint(endpoint);
 
-  Stub.fromHandle(core.MojoHandle handle,
-      {bool doListen: true, Function onClosed})
-      : super.fromHandle(handle, doListen: doListen, onClosed: onClosed);
+  Stub.fromHandle(core.MojoHandle handle) : super.fromHandle(handle);
 
   Stub.unbound() : super.unbound();
 

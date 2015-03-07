@@ -210,6 +210,7 @@ class Encoder {
       assert(!interface.isBound);
       var pipe = new core.MojoMessagePipe();
       interface.bind(pipe.endpoints[0]);
+      interface.listen();
       encodeMessagePipeHandle(pipe.endpoints[1], offset, nullable);
     } else if (interface is Proxy) {
       assert(interface.isBound);
@@ -232,6 +233,7 @@ class Encoder {
     }
     var pipe = new core.MojoMessagePipe();
     client.impl.bind(pipe.endpoints[0]);
+    client.impl.listen();
     encodeMessagePipeHandle(pipe.endpoints[1], offset, nullable);
   }
 

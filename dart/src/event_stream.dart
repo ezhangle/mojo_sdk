@@ -120,9 +120,7 @@ class MojoEventStream extends Stream<List<int>> {
   String toString() => "$_handle";
 }
 
-abstract class Listener {
-  StreamSubscription<List<int>> listen({Function onClosed});
-}
+typedef void ErrorHandler();
 
 class MojoEventStreamListener {
   MojoMessagePipeEndpoint _endpoint;
@@ -130,25 +128,20 @@ class MojoEventStreamListener {
   bool _isOpen = false;
   bool _isInHandler = false;
   StreamSubscription subscription;
+  ErrorHandler onError;
 
-  MojoEventStreamListener.fromEndpoint(MojoMessagePipeEndpoint endpoint,
-      {bool doListen: true, Function onClosed})
+  MojoEventStreamListener.fromEndpoint(MojoMessagePipeEndpoint endpoint)
       : _endpoint = endpoint,
         _eventStream = new MojoEventStream(endpoint.handle),
         _isOpen = false {
-    if (doListen) {
-      listen(onClosed: onClosed);
-    }
+    listen();
   }
 
-  MojoEventStreamListener.fromHandle(MojoHandle handle,
-      {bool doListen: true, Function onClosed}) {
+  MojoEventStreamListener.fromHandle(MojoHandle handle) {
     _endpoint = new MojoMessagePipeEndpoint(handle);
     _eventStream = new MojoEventStream(handle);
     _isOpen = false;
-    if (doListen) {
-      listen(onClosed: onClosed);
-    }
+    listen();
   }
 
   MojoEventStreamListener.unbound()
@@ -170,7 +163,7 @@ class MojoEventStreamListener {
     _isOpen = false;
   }
 
-  StreamSubscription<List<int>> listen({Function onClosed}) {
+  StreamSubscription<List<int>> listen() {
     assert(isBound && (subscription == null));
     _isOpen = true;
     subscription = _eventStream.listen((List<int> event) {
@@ -190,7 +183,7 @@ class MojoEventStreamListener {
       }
       _isInHandler = false;
       if (signalsReceived.isPeerClosed) {
-        if (onClosed != null) onClosed();
+        if (onError != null) onError();
         close();
         // The peer being closed obviates any other signal we might
         // have received since we won't be able to read or write the handle.

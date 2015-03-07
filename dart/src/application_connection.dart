@@ -13,18 +13,12 @@ class LocalServiceProvider implements ServiceProvider {
   ServiceProviderStub _stub;
 
   LocalServiceProvider(this.connection, this._stub) {
+    assert(_stub.isOpen);
     _stub.impl = this;
   }
 
-  listen({Function onClosed}) => _stub.listen(onClosed: _closer(onClosed));
-
-  Function _closer(Function onClosed) {
-    return (() {
-      if (onClosed != null) {
-        onClosed();
-      }
-      close();
-    });
+  set onError(Function f) {
+    _stub.onError = f;
   }
 
   void close({bool nodefer: false}) => _stub.close(nodefer: nodefer);
@@ -71,11 +65,13 @@ class ApplicationConnection {
   LocalServiceProvider _localServiceProvider;
   final _nameToServiceFactory = new Map<String, ServiceFactory>();
   FallbackServiceFactory _fallbackServiceFactory;
+  core.ErrorHandler onError;
 
-  ApplicationConnection(ServiceProviderStub stub, ServiceProviderProxy proxy)
-      : remoteServiceProvider = proxy {
-    if (stub != null) _localServiceProvider =
-        new LocalServiceProvider(this, stub);
+  ApplicationConnection(ServiceProviderStub stub, this.remoteServiceProvider) {
+    if (stub != null) {
+      _localServiceProvider = new LocalServiceProvider(this, stub);
+      _localServiceProvider.onError = _errorHandler;
+    }
   }
 
   FallbackServiceFactory get fallbackServiceFactory => _fallbackServiceFactory;
@@ -99,18 +95,9 @@ class ApplicationConnection {
     _nameToServiceFactory[interfaceName] = factory;
   }
 
-  void listen({Function onClosed}) {
-    assert(_localServiceProvider != null);
-    _localServiceProvider.listen(onClosed: _closer(onClosed));
-  }
-
-  Function _closer(Function onClosed) {
-    return (() {
-      if (onClosed != null) {
-        onClosed();
-      }
-      close();
-    });
+  void _errorHandler() {
+    if (onError != null) onError();
+    close();
   }
 
   void close({bool nodefer: false}) {
