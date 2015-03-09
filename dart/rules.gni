@@ -98,6 +98,26 @@ template("dart_packaged_application") {
               "mojo/public/interfaces/application/shell.mojom.dart",
               "/",
               root_gen_dir + mojo_root),
+
+      # If you are trying to use the mojo sdk in another repository, you'll
+      # probably also need these url mapping overrides. Users are currently
+      # referring to these files with these third_party/mojo/ URLs.
+      #
+      # (This means that we're referring to the same files through two different
+      # URLs, depending on which part of the system we're referring to them from.
+      # This is not a good idea.)
+      "--url-mapping=package:third_party/mojo/src/mojo/public/interfaces/application/application.mojom.dart,/" + rebase_path(
+              "mojo/public/interfaces/application/application.mojom.dart",
+              "/",
+              root_gen_dir + mojo_root),
+      "--url-mapping=package:third_party/mojo/src/mojo/public/interfaces/application/service_provider.mojom.dart,/" + rebase_path(
+              "mojo/public/interfaces/application/service_provider.mojom.dart",
+              "/",
+              root_gen_dir + mojo_root),
+      "--url-mapping=package:third_party/mojo/src/mojo/public/interfaces/application/shell.mojom.dart,/" + rebase_path(
+              "mojo/public/interfaces/application/shell.mojom.dart",
+              "/",
+              root_gen_dir + mojo_root),
     ]
 
     if (defined(invoker.deps)) {
