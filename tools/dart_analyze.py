@@ -34,6 +34,8 @@ def main(args):
   dartzip_file = args.pop(0)
   stamp_file = args.pop(0)
 
+  dartzip_basename = os.path.basename(dartzip_file) + ":"
+
   # Unzip |dartzip_file| to a temporary directory.
   try:
     temp_dir = tempfile.mkdtemp()
@@ -68,7 +70,7 @@ def main(args):
         not re.match(_THAT_ONE_BROKEN_CLOSE_IN_WEB_SOCKETS_PATTERN, i))]
       for line in filtered_lines:
         passed = False
-        print >> sys.stderr, line
+        print >> sys.stderr, line.replace(temp_dir + "/", dartzip_basename)
 
     if passed:
       # We passed cleanly, so touch the stamp file so that we don't run again.
