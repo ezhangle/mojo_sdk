@@ -4,10 +4,6 @@
 
 package system
 
-//#include "c_allocators.h"
-//#include "mojo/public/c/system/core.h"
-import "C"
-
 // Handle is a generic handle for mojo objects.
 type Handle interface {
 	// Close closes the given handle.
@@ -70,12 +66,12 @@ func (h *baseHandle) invalidate() {
 }
 
 func (h *baseHandle) Close() MojoResult {
-	h.core.mu.Lock()
-	defer h.core.mu.Unlock()
-
 	mojoHandle := h.mojoHandle
 	h.invalidate()
-	return MojoResult(C.MojoClose(mojoHandle.cValue()))
+	h.core.mu.Lock()
+	r := sysImpl.Close(uint32(mojoHandle))
+	h.core.mu.Unlock()
+	return MojoResult(r)
 }
 
 func (h *baseHandle) IsValid() bool {
@@ -99,11 +95,12 @@ func (h *baseHandle) ToUntypedHandle() UntypedHandle {
 }
 
 func (h *baseHandle) Wait(signals MojoHandleSignals, deadline MojoDeadline) (MojoResult, MojoHandleSignalsState) {
-	cParams := C.MallocWaitParams()
-	defer C.FreeWaitParams(cParams)
-	*cParams.state = C.struct_MojoHandleSignalsState{}
-	result := C.MojoWait(h.mojoHandle.cValue(), signals.cValue(), deadline.cValue(), cParams.state)
-	return MojoResult(result), cParams.state.goValue()
+	r, satisfiedSignals, satisfiableSignals := sysImpl.Wait(uint32(h.mojoHandle), uint32(signals), uint64(deadline))
+	state := MojoHandleSignalsState{
+		SatisfiedSignals:   MojoHandleSignals(satisfiedSignals),
+		SatisfiableSignals: MojoHandleSignals(satisfiableSignals),
+	}
+	return MojoResult(r), state
 }
 
 type untypedHandleImpl struct {
