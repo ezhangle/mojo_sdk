@@ -120,18 +120,18 @@ template("dart_packaged_application") {
               root_gen_dir + mojo_root),
     ]
 
-    if (defined(invoker.deps)) {
-      deps = invoker.deps
-    }
-
     # Because the standard 'mojo:*' packages depend on the application mojom
     # interface, we must depend on their existence, even though we don't depend
     # directly on them.
-    datadeps = [
-      "../../../../mojo/public/interfaces/application",
+    deps = [
+      rebase_path("mojo/public/interfaces/application", ".", mojo_root),
     ]
+    if (defined(invoker.deps)) {
+      deps += invoker.deps
+    }
+
     if (defined(invoker.datadeps)) {
-      datadeps += invoker.datadeps
+      datadeps = invoker.datadeps
     }
 
     outputs = [
