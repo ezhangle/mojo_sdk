@@ -44,7 +44,7 @@ class MojoHandle {
         return false;
       default:
         // Should be unreachable.
-        throw "Unexpected result $res for wait on $h";
+        throw "Unexpected result $mwr for wait on $h";
     }
   }
 

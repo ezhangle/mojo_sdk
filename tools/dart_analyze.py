@@ -20,14 +20,14 @@ import tempfile
 import zipfile
 
 _ANALYZING_PATTERN = re.compile(r'^Analyzing \[')
-_FINAL_REPORT_PATTERN = re.compile(r'^[0-9]+ errors and [0-9]+ warnings found.')
+_ERRORS_AND_WARNINGS_PATTERN = re.compile(
+  r'^[0-9]+ errors? and [0-9]+ warnings? found.')
+_ERRORS_PATTERN = re.compile(r'^[0-9]+ errors? found.')
+_WARNINGS_PATTERN = re.compile(r'^[0-9]+ warnings? found.')
 
 _NATIVE_ERROR_PATTERN = re.compile(
   r'^\[error\] Native functions can only be declared in the SDK and code that '
   r'is loaded through native extensions')
-_WARNING_PATTERN = re.compile(r'^\[warning\]')
-_THAT_ONE_BROKEN_CLOSE_IN_WEB_SOCKETS_PATTERN = re.compile(
-  r'^\[error\] The name \'close\' is already defined')
 
 
 def main(args):
@@ -63,11 +63,11 @@ def main(args):
       raw_lines.pop()
       filtered_lines = [i for i in raw_lines if (
         not re.match(_ANALYZING_PATTERN, i) and
-        not re.match(_FINAL_REPORT_PATTERN, i) and
+        not re.match(_ERRORS_AND_WARNINGS_PATTERN, i) and
+        not re.match(_ERRORS_PATTERN, i) and
+        not re.match(_WARNINGS_PATTERN, i) and
         # TODO(erg): Remove the rest of these as fixes land:
-        not re.match(_WARNING_PATTERN, i) and
-        not re.match(_NATIVE_ERROR_PATTERN, i) and
-        not re.match(_THAT_ONE_BROKEN_CLOSE_IN_WEB_SOCKETS_PATTERN, i))]
+        not re.match(_NATIVE_ERROR_PATTERN, i))]
       for line in filtered_lines:
         passed = False
         print >> sys.stderr, line.replace(temp_dir + "/", dartzip_basename)

@@ -85,6 +85,6 @@ abstract class Proxy extends core.MojoEventStreamListener {
 
 // Generated Proxy classes implement this interface.
 abstract class ProxyBase {
-  final Proxy impl;
-  final String name;
+  final Proxy impl = null;
+  final String name = null;
 }

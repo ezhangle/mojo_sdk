@@ -82,7 +82,7 @@ class MojoMessagePipeEndpoint {
       dataNumBytes = (numBytes == -1) ? data.lengthInBytes : numBytes;
       if (dataNumBytes > data.lengthInBytes) {
         status = MojoResult.INVALID_ARGUMENT;
-        return status;
+        return null;
       }
     }
 
