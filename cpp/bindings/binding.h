@@ -101,7 +101,7 @@ class Binding : public ErrorHandler {
   // implementation unbound.
   ~Binding() override {
     if (internal_router_) {
-      DestroyRouter();
+      Close();
     }
   }
 
