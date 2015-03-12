@@ -86,7 +86,7 @@ type asyncWaiterWorker struct {
 	isNotified *int32
 	waitChan   <-chan waitRequest // should have a non-empty buffer
 	cancelChan <-chan AsyncWaitId // should have a non-empty buffer
-	ids        Counter            // is incremented each |AsyncWait()| call
+	ids        uint64             // is incremented each |AsyncWait()| call
 }
 
 // removeHandle removes handle at provided index without sending response by
@@ -143,7 +143,8 @@ func (w *asyncWaiterWorker) processIncomingRequests() {
 			w.signals = append(w.signals, request.signals)
 			w.responses = append(w.responses, request.responseChan)
 
-			id := AsyncWaitId(w.ids.Next())
+			w.ids++
+			id := AsyncWaitId(w.ids)
 			w.asyncWaitIds = append(w.asyncWaitIds, id)
 			request.idChan <- id
 		case AsyncWaitId := <-w.cancelChan:
@@ -228,7 +229,7 @@ func newAsyncWaiter() *asyncWaiterImpl {
 		isNotified,
 		waitChan,
 		cancelChan,
-		Counter{},
+		0,
 	}
 	go worker.runLoop()
 	return &asyncWaiterImpl{
