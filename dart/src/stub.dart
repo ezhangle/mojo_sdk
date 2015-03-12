@@ -7,6 +7,7 @@ part of bindings;
 abstract class Stub extends core.MojoEventStreamListener {
   int _outstandingResponseFutures = 0;
   bool _isClosing = false;
+  Completer _closeCompleter;
 
   Stub.fromEndpoint(core.MojoMessagePipeEndpoint endpoint)
       : super.fromEndpoint(endpoint);
@@ -51,6 +52,8 @@ abstract class Stub extends core.MojoEventStreamListener {
             // a response. It is safe to close.
             super.close();
             _isClosing = false;
+            _closeCompleter.complete(null);
+            _closeCompleter = null;
           }
         }
       });
@@ -59,6 +62,8 @@ abstract class Stub extends core.MojoEventStreamListener {
       // there are no outstanding response futures. Do the close now.
       super.close();
       _isClosing = false;
+      _closeCompleter.complete(null);
+      _closeCompleter = null;
     }
   }
 
@@ -69,7 +74,7 @@ abstract class Stub extends core.MojoEventStreamListener {
   // NB: |nodefer| should only be true when calling close() while handling an
   // exception thrown from handleRead(), e.g. when we receive a malformed
   // message.
-  void close({bool nodefer: false}) {
+  Future close({bool nodefer: false}) {
     if (isOpen &&
         !nodefer &&
         (isInHandler || (_outstandingResponseFutures > 0))) {
@@ -78,8 +83,10 @@ abstract class Stub extends core.MojoEventStreamListener {
       // response futures. Defer the actual close until all response futures
       // have been resolved.
       _isClosing = true;
+      _closeCompleter = new Completer();
+      return _closeCompleter.future;
     } else {
-      super.close();
+      return super.close();
     }
   }
 

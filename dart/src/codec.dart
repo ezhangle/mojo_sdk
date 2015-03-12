@@ -180,7 +180,7 @@ class Encoder {
       encodeInvalideHandle(offset, nullable);
     } else {
       encodeUint32(_buffer.handles.length, offset);
-      _buffer.handles.add(value);
+      _buffer.handles.add(value.pass());
     }
   }
 
@@ -565,7 +565,7 @@ class Decoder {
         throw new MojoCodecError(
             'Trying to decode an invalid handle from a non-nullable type.');
       }
-      return new core.MojoHandle(core.MojoHandle.INVALID);
+      return new core.MojoHandle.invalid();
     }
     _validator.claimHandle(index);
     return _handles[index];

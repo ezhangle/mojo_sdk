@@ -41,9 +41,9 @@ class _ApplicationImpl implements application_mojom.Application {
   @override
   void requestQuit() => _application._requestQuitAndClose();
 
-  void close({bool nodefer: false}) {
+  Future close({bool nodefer: false}) {
     if (shell != null) shell.close();
-    _stub.close();
+    return _stub.close();
   }
 }
 
@@ -55,17 +55,18 @@ class _ApplicationImpl implements application_mojom.Application {
 abstract class Application {
   _ApplicationImpl _applicationImpl;
   List<ApplicationConnection> _applicationConnections;
+  Function onError;
 
   Application(core.MojoMessagePipeEndpoint endpoint) {
     _applicationConnections = [];
     _applicationImpl = new _ApplicationImpl(this, endpoint);
-    _applicationImpl.onError = close;
+    _applicationImpl.onError = _errorHandler;
   }
 
   Application.fromHandle(core.MojoHandle appHandle) {
     _applicationConnections = [];
     _applicationImpl = new _ApplicationImpl.fromHandle(this, appHandle);
-    _applicationImpl.onError = close;
+    _applicationImpl.onError = _errorHandler;
   }
 
   void initialize(List<String> args, String url) {}
@@ -97,11 +98,17 @@ abstract class Application {
     close();
   }
 
-  void close() {
+  void _errorHandler() {
+    close().then((_) {
+      if (onError != null) onError();
+    });
+  }
+
+  Future close() {
     assert(_applicationImpl != null);
     _applicationConnections.forEach((c) => c.close());
     _applicationConnections.clear();
-    _applicationImpl.close();
+    return _applicationImpl.close();
   }
 
   // This method closes all the application connections. Used during apptesting.
