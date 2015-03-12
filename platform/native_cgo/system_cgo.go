@@ -5,6 +5,31 @@
 package native_cgo
 
 //#include "mojo/public/c/system/core.h"
+// // These functions are used to 8-byte align C structs.
+// MojoResult CreateSharedBuffer(struct MojoCreateSharedBufferOptions* options,
+//     uint64_t num_bytes, MojoHandle* handle) {
+//   struct MojoCreateSharedBufferOptions aligned_options = *options;
+//   return MojoCreateSharedBuffer(&aligned_options, num_bytes, handle);
+// }
+//
+// MojoResult DuplicateBufferHandle(MojoHandle handle,
+//     struct MojoDuplicateBufferHandleOptions* options, MojoHandle* duplicate) {
+//   struct MojoDuplicateBufferHandleOptions aligned_options = *options;
+//   return MojoDuplicateBufferHandle(handle, &aligned_options, duplicate);
+// }
+//
+// MojoResult CreateDataPipe(struct MojoCreateDataPipeOptions* options,
+//     MojoHandle* producer, MojoHandle* consumer) {
+//   struct MojoCreateDataPipeOptions aligned_options = *options;
+//   return MojoCreateDataPipe(&aligned_options, producer, consumer);
+// }
+//
+// MojoResult CreateMessagePipe(struct MojoCreateMessagePipeOptions* options,
+//     MojoHandle* handle0, MojoHandle* handle1) {
+//   struct MojoCreateMessagePipeOptions aligned_options = *options;
+//   return MojoCreateMessagePipe(&aligned_options, handle0, handle1);
+// }
+//
 import "C"
 import (
 	"reflect"
@@ -21,7 +46,7 @@ func (c *CGoSystem) CreateSharedBuffer(flags uint32, numBytes uint64) (int32, ui
 		C.MojoCreateSharedBufferOptionsFlags(flags),
 	}
 	var cHandle C.MojoHandle
-	r := C.MojoCreateSharedBuffer(opts, C.uint64_t(numBytes), &cHandle)
+	r := C.CreateSharedBuffer(opts, C.uint64_t(numBytes), &cHandle)
 	return int32(r), uint32(cHandle)
 }
 
@@ -32,7 +57,7 @@ func (c *CGoSystem) DuplicateBufferHandle(handle uint32, flags uint32) (int32, u
 		C.MojoDuplicateBufferHandleOptionsFlags(flags),
 	}
 	var cDuplicateHandle C.MojoHandle
-	r := C.MojoDuplicateBufferHandle(C.MojoHandle(handle), opts, &cDuplicateHandle)
+	r := C.DuplicateBufferHandle(C.MojoHandle(handle), opts, &cDuplicateHandle)
 	return int32(r), uint32(cDuplicateHandle)
 }
 
@@ -51,7 +76,7 @@ func (c *CGoSystem) UnmapBuffer(buf []byte) (result int32) {
 
 func createDataPipeWithCOptions(opts *C.struct_MojoCreateDataPipeOptions) (result int32, producerHandle, consumerHandle uint32) {
 	var cProducerHandle, cConsumerHandle C.MojoHandle
-	r := C.MojoCreateDataPipe(opts, &cProducerHandle, &cConsumerHandle)
+	r := C.CreateDataPipe(opts, &cProducerHandle, &cConsumerHandle)
 	return int32(r), uint32(cProducerHandle), uint32(cConsumerHandle)
 }
 
@@ -162,7 +187,7 @@ func (c *CGoSystem) CreateMessagePipe(flags uint32) (int32, uint32, uint32) {
 		C.uint32_t(unsafe.Sizeof(*opts)),
 		C.MojoCreateMessagePipeOptionsFlags(flags),
 	}
-	r := C.MojoCreateMessagePipe(opts, &handle0, &handle1)
+	r := C.CreateMessagePipe(opts, &handle0, &handle1)
 	return int32(r), uint32(handle0), uint32(handle1)
 }
 
