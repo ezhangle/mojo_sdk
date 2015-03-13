@@ -22,8 +22,7 @@ import zipfile
 _ANALYZING_PATTERN = re.compile(r'^Analyzing \[')
 _ERRORS_AND_WARNINGS_PATTERN = re.compile(
   r'^[0-9]+ errors? and [0-9]+ warnings? found.')
-_ERRORS_PATTERN = re.compile(r'^[0-9]+ errors? found.')
-_WARNINGS_PATTERN = re.compile(r'^[0-9]+ warnings? found.')
+_ERRORS_PATTERN = re.compile(r'^([0-9]+|No) (error|warning|issue)s? found.')
 
 
 def main(args):
@@ -47,6 +46,7 @@ def main(args):
     cmd.extend(dart_files)
     cmd.extend(args)
     cmd.append("--package-root=%s" % temp_dir)
+    cmd.append("--fatal-warnings")
 
     passed = True
     try:
@@ -60,8 +60,7 @@ def main(args):
       filtered_lines = [i for i in raw_lines if (
         not re.match(_ANALYZING_PATTERN, i) and
         not re.match(_ERRORS_AND_WARNINGS_PATTERN, i) and
-        not re.match(_ERRORS_PATTERN, i) and
-        not re.match(_WARNINGS_PATTERN, i))]
+        not re.match(_ERRORS_PATTERN, i))]
       for line in filtered_lines:
         passed = False
         print >> sys.stderr, line.replace(temp_dir + "/", dartzip_basename)
