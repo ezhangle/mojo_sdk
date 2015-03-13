@@ -25,10 +25,6 @@ _ERRORS_AND_WARNINGS_PATTERN = re.compile(
 _ERRORS_PATTERN = re.compile(r'^[0-9]+ errors? found.')
 _WARNINGS_PATTERN = re.compile(r'^[0-9]+ warnings? found.')
 
-_NATIVE_ERROR_PATTERN = re.compile(
-  r'^\[error\] Native functions can only be declared in the SDK and code that '
-  r'is loaded through native extensions')
-
 
 def main(args):
   dartzip_file = args.pop(0)
@@ -65,9 +61,7 @@ def main(args):
         not re.match(_ANALYZING_PATTERN, i) and
         not re.match(_ERRORS_AND_WARNINGS_PATTERN, i) and
         not re.match(_ERRORS_PATTERN, i) and
-        not re.match(_WARNINGS_PATTERN, i) and
-        # TODO(erg): Remove the rest of these as fixes land:
-        not re.match(_NATIVE_ERROR_PATTERN, i))]
+        not re.match(_WARNINGS_PATTERN, i))]
       for line in filtered_lines:
         passed = False
         print >> sys.stderr, line.replace(temp_dir + "/", dartzip_basename)
