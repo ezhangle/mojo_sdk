@@ -31,16 +31,26 @@ if (use_prebuilt_mojo_shell) {
 if (use_prebuilt_network_service) {
   copy("copy_network_service") {
     filename = "network_service.mojo"
-    if (is_android) {
+    if (defined(prebuilt_network_service_location) &&
+        prebuilt_network_service_location != "") {
       sources = [
-        "prebuilt/network_service/android-arm/$filename",
+        "$prebuilt_network_service_location",
       ]
     } else {
-      assert(is_linux)
-      sources = [
-        "prebuilt/network_service/linux-x64/$filename",
-      ]
+      if (is_android) {
+        assert(cpu_arch == "arm",
+               "Only arm version prebuilt netowrk_service.mojo is available.")
+        sources = [
+          "prebuilt/network_service/android-arm/$filename",
+        ]
+      } else {
+        assert(is_linux)
+        sources = [
+          "prebuilt/network_service/linux-x64/$filename",
+        ]
+      }
     }
+
     outputs = [
       "$root_out_dir/$filename",
     ]
