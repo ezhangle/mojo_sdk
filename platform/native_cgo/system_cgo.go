@@ -8,26 +8,46 @@ package native_cgo
 // // These functions are used to 8-byte align C structs.
 // MojoResult CreateSharedBuffer(struct MojoCreateSharedBufferOptions* options,
 //     uint64_t num_bytes, MojoHandle* handle) {
-//   struct MojoCreateSharedBufferOptions aligned_options = *options;
-//   return MojoCreateSharedBuffer(&aligned_options, num_bytes, handle);
+//   struct MojoCreateSharedBufferOptions aligned_options;
+//   if (options != NULL) {
+//     aligned_options = *options;
+//     return MojoCreateSharedBuffer(&aligned_options, num_bytes, handle);
+//   } else {
+//     return MojoCreateSharedBuffer(NULL, num_bytes, handle);
+//   }
 // }
 //
 // MojoResult DuplicateBufferHandle(MojoHandle handle,
 //     struct MojoDuplicateBufferHandleOptions* options, MojoHandle* duplicate) {
-//   struct MojoDuplicateBufferHandleOptions aligned_options = *options;
-//   return MojoDuplicateBufferHandle(handle, &aligned_options, duplicate);
+//   struct MojoDuplicateBufferHandleOptions aligned_options;
+//   if (options != NULL) {
+//     aligned_options = *options;
+//     return MojoDuplicateBufferHandle(handle, &aligned_options, duplicate);
+//   } else {
+//     return MojoDuplicateBufferHandle(handle, NULL, duplicate);
+//   }
 // }
 //
 // MojoResult CreateDataPipe(struct MojoCreateDataPipeOptions* options,
 //     MojoHandle* producer, MojoHandle* consumer) {
-//   struct MojoCreateDataPipeOptions aligned_options = *options;
-//   return MojoCreateDataPipe(&aligned_options, producer, consumer);
+//   struct MojoCreateDataPipeOptions aligned_options;
+//   if (options != NULL) {
+//     aligned_options = *options;
+//     return MojoCreateDataPipe(&aligned_options, producer, consumer);
+//   } else {
+//     return MojoCreateDataPipe(NULL, producer, consumer);
+//   }
 // }
 //
 // MojoResult CreateMessagePipe(struct MojoCreateMessagePipeOptions* options,
 //     MojoHandle* handle0, MojoHandle* handle1) {
 //   struct MojoCreateMessagePipeOptions aligned_options = *options;
-//   return MojoCreateMessagePipe(&aligned_options, handle0, handle1);
+//   if (options != NULL) {
+//     aligned_options = *options;
+//     return MojoCreateMessagePipe(&aligned_options, handle0, handle1);
+//   } else {
+//     return MojoCreateMessagePipe(NULL, handle0, handle1);
+//   }
 // }
 //
 import "C"
