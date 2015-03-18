@@ -6,6 +6,7 @@ package bindings
 
 import (
 	"fmt"
+	"runtime"
 	"sync"
 	"sync/atomic"
 
@@ -212,6 +213,15 @@ type asyncWaiterImpl struct {
 	cancelChan       chan<- AsyncWaitId // should have a non-empty buffer
 }
 
+func finalizeWorker(worker *asyncWaiterWorker) {
+	// Close waking handle on worker side.
+	worker.handles[0].Close()
+}
+
+func finalizeAsyncWaiter(waiter *asyncWaiterImpl) {
+	waiter.wakingHandle.Close()
+}
+
 // newAsyncWaiter creates an asyncWaiterImpl and starts its worker goroutine.
 func newAsyncWaiter() *asyncWaiterImpl {
 	result, h0, h1 := system.GetCore().CreateMessagePipe(nil)
@@ -221,7 +231,7 @@ func newAsyncWaiter() *asyncWaiterImpl {
 	waitChan := make(chan waitRequest, 10)
 	cancelChan := make(chan AsyncWaitId, 10)
 	isNotified := new(int32)
-	worker := asyncWaiterWorker{
+	worker := &asyncWaiterWorker{
 		[]system.Handle{h1},
 		[]system.MojoHandleSignals{system.MOJO_HANDLE_SIGNAL_READABLE},
 		[]AsyncWaitId{0},
@@ -231,13 +241,16 @@ func newAsyncWaiter() *asyncWaiterImpl {
 		cancelChan,
 		0,
 	}
+	runtime.SetFinalizer(worker, finalizeWorker)
 	go worker.runLoop()
-	return &asyncWaiterImpl{
+	waiter := &asyncWaiterImpl{
 		wakingHandle:     h0,
 		isWorkerNotified: isNotified,
 		waitChan:         waitChan,
 		cancelChan:       cancelChan,
 	}
+	runtime.SetFinalizer(waiter, finalizeAsyncWaiter)
+	return waiter
 }
 
 // wakeWorker wakes the worker from |WaitMany()| call. This should be called

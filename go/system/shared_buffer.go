@@ -27,6 +27,8 @@ type SharedBufferHandle interface {
 }
 
 type sharedBuffer struct {
+	// baseHandle should always be the first component of this struct,
+	// see |finalizeHandle()| for more details.
 	baseHandle
 }
 

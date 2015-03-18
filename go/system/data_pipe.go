@@ -77,6 +77,8 @@ type ProducerHandle interface {
 }
 
 type dataPipeConsumer struct {
+	// baseHandle should always be the first component of this struct,
+	// see |finalizeHandle()| for more details.
 	baseHandle
 }
 
@@ -102,6 +104,8 @@ func (h *dataPipeConsumer) EndReadData(numBytesRead int) MojoResult {
 }
 
 type dataPipeProducer struct {
+	// baseHandle should always be the first component of this struct,
+	// see |finalizeHandle()| for more details.
 	baseHandle
 }
 

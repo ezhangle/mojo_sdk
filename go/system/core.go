@@ -4,7 +4,10 @@
 
 package system
 
-import "sync"
+import (
+	"runtime"
+	"sync"
+)
 
 // core is an instance of the Mojo system APIs implementation.
 var core coreImpl
@@ -70,8 +73,10 @@ func GetCore() Core {
 	return &core
 }
 
-func (impl *coreImpl) AcquireNativeHandle(handle MojoHandle) UntypedHandle {
-	return &untypedHandleImpl{baseHandle{impl, handle}}
+func (impl *coreImpl) AcquireNativeHandle(mojoHandle MojoHandle) UntypedHandle {
+	handle := &untypedHandleImpl{baseHandle{impl, mojoHandle}}
+	runtime.SetFinalizer(handle, finalizeHandle)
+	return handle
 }
 
 func (impl *coreImpl) GetTimeTicksNow() MojoTimeTicks {

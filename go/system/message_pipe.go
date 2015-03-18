@@ -23,6 +23,8 @@ type MessagePipeHandle interface {
 }
 
 type messagePipe struct {
+	// baseHandle should always be the first component of this struct,
+	// see |finalizeHandle()| for more details.
 	baseHandle
 }
 
