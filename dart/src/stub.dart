@@ -50,20 +50,22 @@ abstract class Stub extends core.MojoEventStreamListener {
           if (_isClosing && (_outstandingResponseFutures == 0)) {
             // This was the final response future for which we needed to send
             // a response. It is safe to close.
-            super.close();
-            _isClosing = false;
-            _closeCompleter.complete(null);
-            _closeCompleter = null;
+            super.close().then((_) {
+              _isClosing = false;
+              _closeCompleter.complete(null);
+              _closeCompleter = null;
+            });
           }
         }
       });
     } else if (_isClosing && (_outstandingResponseFutures == 0)) {
       // We are closing, there is no response to send for this message, and
       // there are no outstanding response futures. Do the close now.
-      super.close();
-      _isClosing = false;
-      _closeCompleter.complete(null);
-      _closeCompleter = null;
+      super.close().then((_) {
+        _isClosing = false;
+        _closeCompleter.complete(null);
+        _closeCompleter = null;
+      });
     }
   }
 
@@ -73,7 +75,8 @@ abstract class Stub extends core.MojoEventStreamListener {
 
   // NB: |nodefer| should only be true when calling close() while handling an
   // exception thrown from handleRead(), e.g. when we receive a malformed
-  // message.
+  // message, or when we have received the PEER_CLOSED event.
+  @override
   Future close({bool nodefer: false}) {
     if (isOpen &&
         !nodefer &&
@@ -86,7 +89,13 @@ abstract class Stub extends core.MojoEventStreamListener {
       _closeCompleter = new Completer();
       return _closeCompleter.future;
     } else {
-      return super.close();
+      return super.close(nodefer: nodefer).then((_) {
+        if (_isClosing) {
+          _isClosing = false;
+          _closeCompleter.complete(null);
+          _closeCompleter = null;
+        }
+      });
     }
   }
 
