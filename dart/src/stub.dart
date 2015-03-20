@@ -44,9 +44,10 @@ abstract class Stub extends core.MojoEventStreamListener {
         if (isOpen) {
           endpoint.write(
               response.buffer, response.buffer.lengthInBytes, response.handles);
-          if (!endpoint.status.isOk) {
-            throw 'message pipe write failed: ${endpoint.status}';
-          }
+          // FailedPrecondition is only used to indicate that the other end of
+          // the pipe has been closed. We can ignore the close here and wait for
+          // the PeerClosed signal on the event stream.
+          assert(endpoint.status.isOk || endpoint.status.isFailedPrecondition);
           if (_isClosing && (_outstandingResponseFutures == 0)) {
             // This was the final response future for which we needed to send
             // a response. It is safe to close.
