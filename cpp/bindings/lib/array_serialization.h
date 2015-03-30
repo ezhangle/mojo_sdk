@@ -137,17 +137,16 @@ struct ArraySerializer<ScopedHandleBase<H>, H, true> {
 // This template must only apply to pointer mojo entity (structs and arrays).
 // This is done by ensuring that WrapperTraits<S>::DataType is a pointer.
 template <typename S>
-struct ArraySerializer<S,
-                       typename internal::EnableIf<
-                           internal::IsPointer<typename internal::WrapperTraits<
-                               S>::DataType>::value,
-                           typename internal::WrapperTraits<S>::DataType>::type,
-                       true> {
-  typedef typename internal::RemovePointer<
-      typename internal::WrapperTraits<S>::DataType>::type S_Data;
+struct ArraySerializer<
+    S,
+    typename EnableIf<IsPointer<typename WrapperTraits<S>::DataType>::value,
+                      typename WrapperTraits<S>::DataType>::type,
+    true> {
+  typedef
+      typename RemovePointer<typename WrapperTraits<S>::DataType>::type S_Data;
   static size_t GetSerializedSize(const Array<S>& input) {
     size_t size = sizeof(Array_Data<S_Data*>) +
-                  input.size() * sizeof(internal::StructPointer<S_Data>);
+                  input.size() * sizeof(StructPointer<S_Data>);
     for (size_t i = 0; i < input.size(); ++i)
       size += GetSerializedSize_(input[i]);
     return size;
@@ -184,7 +183,7 @@ struct ArraySerializer<S,
   struct SerializeCaller {
     static void Run(T input,
                     Buffer* buf,
-                    typename internal::WrapperTraits<T>::DataType* output) {
+                    typename WrapperTraits<T>::DataType* output) {
       static_assert((IsSame<Params, NoValidateParams>::value),
                     "Struct type should not have array validate params");
 
@@ -214,8 +213,8 @@ struct ArraySerializer<S,
 template <>
 struct ArraySerializer<String, String_Data*, false> {
   static size_t GetSerializedSize(const Array<String>& input) {
-    size_t size = sizeof(Array_Data<String_Data*>) +
-                  input.size() * sizeof(internal::StringPointer);
+    size_t size =
+        sizeof(Array_Data<String_Data*>) + input.size() * sizeof(StringPointer);
     for (size_t i = 0; i < input.size(); ++i)
       size += GetSerializedSize_(input[i]);
     return size;
