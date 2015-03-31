@@ -258,7 +258,9 @@ TEST_F(BindingCallbackTest, CloseBindingBeforeDeletingCallback) {
 
 // Tests that deleting a Callback without using it before the
 // Binding has been destroyed or closed results in a DCHECK.
-TEST_F(BindingCallbackTest, DeleteCallbackBeforeBindingDeathTest) {
+// Temporarily disabled due to
+// https://code.google.com/p/chromium/issues/detail?id=472218
+TEST_F(BindingCallbackTest, DISABLED_DeleteCallbackBeforeBindingDeathTest) {
   // Create the ServerImpl and the Binding.
   BindingCallbackTestInterfaceImpl server_impl;
   Binding<BindingCallbackTestInterface> binding(
