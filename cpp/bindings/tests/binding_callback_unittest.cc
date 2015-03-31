@@ -277,10 +277,12 @@ TEST_F(BindingCallbackTest, DeleteCallbackBeforeBindingDeathTest) {
   EXPECT_EQ(7, server_impl.last_server_value_seen());
   EXPECT_EQ(0, last_client_callback_value_seen_);
 
-  // Delete the callback without running it. This should cause a crash
-  // due to a DCHECK.
+#if !defined(NDEBUG) || defined(DCHECK_ALWAYS_ON)
+  // Delete the callback without running it. This should cause a crash in debug
+  // builds due to a DCHECK.
   EXPECT_DEATH(server_impl.DeleteCallback(),
                "Check failed: !callback_was_dropped.");
+#endif
 }
 
 }  // namespace
