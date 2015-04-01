@@ -3,10 +3,12 @@
 // found in the LICENSE file.
 
 #include "mojo/public/cpp/bindings/interface_ptr.h"
+#include "mojo/public/cpp/bindings/string.h"
 #include "mojo/public/cpp/environment/environment.h"
+#include "mojo/public/cpp/system/message_pipe.h"
 #include "mojo/public/cpp/test_support/test_support.h"
 #include "mojo/public/cpp/utility/run_loop.h"
-#include "mojo/public/interfaces/bindings/tests/binding_callback_test_interfaces.mojom.h"
+#include "mojo/public/interfaces/bindings/tests/sample_interfaces.mojom.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -36,15 +38,16 @@ class ValueSaver {
   int32_t* const last_value_seen_;
 };
 
-// An implementation of BindingCallbackTestInterface used on the server side.
+// An implementation of sample::Provider used on the server side.
+// It only implements one of the methods: EchoInt().
 // All it does is save the values and Callbacks it sees.
-class BindingCallbackTestInterfaceImpl : public BindingCallbackTestInterface {
+class InterfaceImpl : public sample::Provider {
  public:
-  BindingCallbackTestInterfaceImpl()
+  InterfaceImpl()
       : last_server_value_seen_(0),
         callback_saved_(new Callback<void(int32_t)>()) {}
 
-  ~BindingCallbackTestInterfaceImpl() override {
+  ~InterfaceImpl() override {
     if (callback_saved_) {
       delete callback_saved_;
     }
@@ -66,10 +69,34 @@ class BindingCallbackTestInterfaceImpl : public BindingCallbackTestInterface {
     callback_saved_ = nullptr;
   }
 
+  // sample::Provider implementation
+
   // Saves its two input values in member variables and does nothing else.
-  void EchoInt(int32_t x, const Callback<void(int32_t)>& callback) {
+  void EchoInt(int32_t x, const Callback<void(int32_t)>& callback) override {
     last_server_value_seen_ = x;
     *callback_saved_ = callback;
+  }
+
+  void EchoString(const String& a,
+                  const Callback<void(String)>& callback) override {
+    MOJO_CHECK(false) << "Not implemented.";
+  }
+
+  void EchoStrings(const String& a,
+                   const String& b,
+                   const Callback<void(String, String)>& callback) override {
+    MOJO_CHECK(false) << "Not implemented.";
+  }
+
+  void EchoMessagePipeHandle(
+      ScopedMessagePipeHandle a,
+      const Callback<void(ScopedMessagePipeHandle)>& callback) override {
+    MOJO_CHECK(false) << "Not implemented.";
+  }
+
+  void EchoEnum(sample::Enum a,
+                const Callback<void(sample::Enum)>& callback) override {
+    MOJO_CHECK(false) << "Not implemented.";
   }
 
   void resetLastServerValueSeen() { last_server_value_seen_ = 0; }
@@ -87,17 +114,9 @@ class BindingCallbackTest : public testing::Test {
 
  protected:
   int32_t last_client_callback_value_seen_;
-  ScopedMessagePipeHandle handle_client_;
-  ScopedMessagePipeHandle handle_server_;
-  BindingCallbackTestInterfacePtr interface_ptr_;
+  sample::ProviderPtr interface_ptr_;
 
   void PumpMessages() { loop_.RunUntilIdle(); }
-  void SetUp() {
-    CreateMessagePipe(nullptr, &handle_client_, &handle_server_);
-    // Create the client InterfacePtr.
-    interface_ptr_ =
-        MakeProxy<BindingCallbackTestInterface>(handle_client_.Pass());
-  }
 
  private:
   Environment env_;
@@ -108,10 +127,8 @@ class BindingCallbackTest : public testing::Test {
 // other normally.
 TEST_F(BindingCallbackTest, Basic) {
   // Create the ServerImpl and the Binding.
-  BindingCallbackTestInterfaceImpl server_impl;
-  Binding<BindingCallbackTestInterface> binding(
-      &server_impl,
-      MakeRequest<BindingCallbackTestInterface>(handle_server_.Pass()));
+  InterfaceImpl server_impl;
+  Binding<sample::Provider> binding(&server_impl, GetProxy(&interface_ptr_));
 
   // Initialize the test values.
   server_impl.resetLastServerValueSeen();
@@ -156,12 +173,10 @@ TEST_F(BindingCallbackTest, Basic) {
 // results in a clean failure.
 TEST_F(BindingCallbackTest, DeleteBindingThenRunCallback) {
   // Create the ServerImpl.
-  BindingCallbackTestInterfaceImpl server_impl;
+  InterfaceImpl server_impl;
   {
     // Create the binding in an inner scope so it can be deleted first.
-    Binding<BindingCallbackTestInterface> binding(
-        &server_impl,
-        MakeRequest<BindingCallbackTestInterface>(handle_server_.Pass()));
+    Binding<sample::Provider> binding(&server_impl, GetProxy(&interface_ptr_));
 
     // Initialize the test values.
     server_impl.resetLastServerValueSeen();
@@ -196,12 +211,10 @@ TEST_F(BindingCallbackTest, DeleteBindingThenRunCallback) {
 // binding has already been deleted does not result in a crash.
 TEST_F(BindingCallbackTest, DeleteBindingThenDeleteCallback) {
   // Create the ServerImpl.
-  BindingCallbackTestInterfaceImpl server_impl;
+  InterfaceImpl server_impl;
   {
     // Create the binding in an inner scope so it can be deleted first.
-    Binding<BindingCallbackTestInterface> binding(
-        &server_impl,
-        MakeRequest<BindingCallbackTestInterface>(handle_server_.Pass()));
+    Binding<sample::Provider> binding(&server_impl, GetProxy(&interface_ptr_));
 
     // Initialize the test values.
     server_impl.resetLastServerValueSeen();
@@ -227,10 +240,8 @@ TEST_F(BindingCallbackTest, DeleteBindingThenDeleteCallback) {
 // without running it without encountering a crash.
 TEST_F(BindingCallbackTest, CloseBindingBeforeDeletingCallback) {
   // Create the ServerImpl and the Binding.
-  BindingCallbackTestInterfaceImpl server_impl;
-  Binding<BindingCallbackTestInterface> binding(
-      &server_impl,
-      MakeRequest<BindingCallbackTestInterface>(handle_server_.Pass()));
+  InterfaceImpl server_impl;
+  Binding<sample::Provider> binding(&server_impl, GetProxy(&interface_ptr_));
 
   // Initialize the test values.
   server_impl.resetLastServerValueSeen();
@@ -262,10 +273,8 @@ TEST_F(BindingCallbackTest, CloseBindingBeforeDeletingCallback) {
 // https://code.google.com/p/chromium/issues/detail?id=472218
 TEST_F(BindingCallbackTest, DISABLED_DeleteCallbackBeforeBindingDeathTest) {
   // Create the ServerImpl and the Binding.
-  BindingCallbackTestInterfaceImpl server_impl;
-  Binding<BindingCallbackTestInterface> binding(
-      &server_impl,
-      MakeRequest<BindingCallbackTestInterface>(handle_server_.Pass()));
+  InterfaceImpl server_impl;
+  Binding<sample::Provider> binding(&server_impl, GetProxy(&interface_ptr_));
 
   // Initialize the test values.
   server_impl.resetLastServerValueSeen();
