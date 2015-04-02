@@ -47,14 +47,13 @@ namespace internal {
 
 template <typename E,
           typename F,
-          bool move_only = IsMoveOnlyType<E>::value,
           bool is_union =
               IsUnionDataType<typename RemovePointer<F>::type>::value>
 struct ArraySerializer;
 
 // Handles serialization and deserialization of arrays of pod types.
 template <typename E, typename F>
-struct ArraySerializer<E, F, false, false> {
+struct ArraySerializer<E, F, false> {
   static_assert(sizeof(E) == sizeof(F), "Incorrect array serializer");
   static size_t GetSerializedSize(const Array<E>& input) {
     return sizeof(Array_Data<F>) + Align(input.size() * sizeof(E));
@@ -81,7 +80,7 @@ struct ArraySerializer<E, F, false, false> {
 
 // Serializes and deserializes arrays of bools.
 template <>
-struct ArraySerializer<bool, bool, false, false> {
+struct ArraySerializer<bool, bool, false> {
   static size_t GetSerializedSize(const Array<bool>& input) {
     return sizeof(Array_Data<bool>) + Align((input.size() + 7) / 8);
   }
@@ -110,7 +109,7 @@ struct ArraySerializer<bool, bool, false, false> {
 
 // Serializes and deserializes arrays of handles.
 template <typename H>
-struct ArraySerializer<ScopedHandleBase<H>, H, true, false> {
+struct ArraySerializer<ScopedHandleBase<H>, H, false> {
   static size_t GetSerializedSize(const Array<ScopedHandleBase<H>>& input) {
     return sizeof(Array_Data<H>) + Align(input.size() * sizeof(H));
   }
@@ -148,7 +147,6 @@ struct ArraySerializer<
     S,
     typename EnableIf<IsPointer<typename WrapperTraits<S>::DataType>::value,
                       typename WrapperTraits<S>::DataType>::type,
-    true,
     false> {
   typedef
       typename RemovePointer<typename WrapperTraits<S>::DataType>::type S_Data;
@@ -218,7 +216,7 @@ struct ArraySerializer<
 
 // Handles serialization and deserialization of arrays of unions.
 template <typename U, typename U_Data>
-struct ArraySerializer<U, U_Data, true, true> {
+struct ArraySerializer<U, U_Data, true> {
   static size_t GetSerializedSize(const Array<U>& input) {
     size_t size = sizeof(Array_Data<U_Data>);
     for (size_t i = 0; i < input.size(); ++i) {
@@ -255,7 +253,7 @@ struct ArraySerializer<U, U_Data, true, true> {
 
 // Handles serialization and deserialization of arrays of strings.
 template <>
-struct ArraySerializer<String, String_Data*, false> {
+struct ArraySerializer<String, String_Data*> {
   static size_t GetSerializedSize(const Array<String>& input) {
     size_t size =
         sizeof(Array_Data<String_Data*>) + input.size() * sizeof(StringPointer);
