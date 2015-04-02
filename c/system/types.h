@@ -89,7 +89,7 @@ const MojoHandle MOJO_HANDLE_INVALID = 0;
 //
 // TODO(vtl): Add a |MOJO_RESULT_UNSATISFIABLE|?
 
-typedef uint32_t MojoResult;
+typedef int32_t MojoResult;
 
 #ifdef __cplusplus
 const MojoResult MOJO_RESULT_OK = 0;

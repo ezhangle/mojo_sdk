@@ -13,7 +13,7 @@ import "math"
 //
 type MojoTimeTicks int64
 type MojoHandle uint32
-type MojoResult uint32
+type MojoResult int32
 type MojoDeadline uint64
 type MojoHandleSignals uint32
 type MojoWriteMessageFlags uint32
