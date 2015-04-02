@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "build/build_config.h"
 #include "mojo/public/cpp/bindings/interface_ptr.h"
 #include "mojo/public/cpp/bindings/string.h"
 #include "mojo/public/cpp/environment/environment.h"
@@ -269,9 +270,7 @@ TEST_F(BindingCallbackTest, CloseBindingBeforeDeletingCallback) {
 
 // Tests that deleting a Callback without using it before the
 // Binding has been destroyed or closed results in a DCHECK.
-// Temporarily disabled due to
-// https://code.google.com/p/chromium/issues/detail?id=472218
-TEST_F(BindingCallbackTest, DISABLED_DeleteCallbackBeforeBindingDeathTest) {
+TEST_F(BindingCallbackTest, DeleteCallbackBeforeBindingDeathTest) {
   // Create the ServerImpl and the Binding.
   InterfaceImpl server_impl;
   Binding<sample::Provider> binding(&server_impl, GetProxy(&interface_ptr_));
@@ -288,11 +287,14 @@ TEST_F(BindingCallbackTest, DISABLED_DeleteCallbackBeforeBindingDeathTest) {
   EXPECT_EQ(7, server_impl.last_server_value_seen());
   EXPECT_EQ(0, last_client_callback_value_seen_);
 
-#if !defined(NDEBUG) || defined(DCHECK_ALWAYS_ON)
+// TODO(rudominer) We skip the EXPECT_DEATH on Android because it does not
+// work at the moment. But this may be fixed by:
+// https://codereview.chromium.org/1053693002/
+#if !defined(OS_ANDROID) && (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
   // Delete the callback without running it. This should cause a crash in debug
   // builds due to a DCHECK.
-  EXPECT_DEATH(server_impl.DeleteCallback(),
-               "Check failed: !callback_was_dropped.");
+  EXPECT_DEATH_IF_SUPPORTED(server_impl.DeleteCallback(),
+                            "Check failed: !callback_was_dropped.");
 #endif
 }
 
