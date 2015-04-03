@@ -152,6 +152,7 @@ public class Connector implements MessageReceiver, HandleOwner<MessagePipeHandle
          */
         @Override
         public void onError(MojoException exception) {
+            mCancellable = null;
             Connector.this.onError(exception);
         }
 
@@ -170,8 +171,8 @@ public class Connector implements MessageReceiver, HandleOwner<MessagePipeHandle
     }
 
     private void onError(MojoException exception) {
-        mCancellable = null;
         close();
+        assert mCancellable == null;
         if (mErrorHandler != null) {
             mErrorHandler.onConnectionError(exception);
         }
