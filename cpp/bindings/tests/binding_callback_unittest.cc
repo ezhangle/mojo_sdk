@@ -287,10 +287,7 @@ TEST_F(BindingCallbackTest, DeleteCallbackBeforeBindingDeathTest) {
   EXPECT_EQ(7, server_impl.last_server_value_seen());
   EXPECT_EQ(0, last_client_callback_value_seen_);
 
-// TODO(rudominer) We skip the EXPECT_DEATH on Android because it does not
-// work at the moment. But this may be fixed by:
-// https://codereview.chromium.org/1053693002/
-#if !defined(OS_ANDROID) && (!defined(NDEBUG) || defined(DCHECK_ALWAYS_ON))
+#if !defined(NDEBUG) || defined(DCHECK_ALWAYS_ON)
   // Delete the callback without running it. This should cause a crash in debug
   // builds due to a DCHECK.
   EXPECT_DEATH_IF_SUPPORTED(server_impl.DeleteCallback(),
