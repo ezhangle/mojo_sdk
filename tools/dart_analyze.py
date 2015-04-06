@@ -27,10 +27,19 @@ _ERRORS_AND_WARNINGS_PATTERN = re.compile(
   r'^[0-9]+ errors? and [0-9]+ warnings? found.')
 _ERRORS_PATTERN = re.compile(r'^([0-9]+|No) (error|warning|issue)s? found.')
 
+def _success(stamp_file):
+  # We passed cleanly, so touch the stamp file so that we don't run again.
+  with open(stamp_file, 'a'):
+    os.utime(stamp_file, None)
+  return 0
 
 def main(args):
   dartzip_file = args.pop(0)
   stamp_file = args.pop(0)
+
+  # Do not run dart analyzer on third_party sources.
+  if "/third_party/" in dartzip_file:
+    return _success(stamp_file)
 
   dartzip_basename = os.path.basename(dartzip_file) + ":"
 
@@ -45,6 +54,9 @@ def main(args):
 
     # Grab all the toplevel dart files in the archive.
     dart_files = glob.glob(os.path.join(temp_dir, "*.dart"))
+
+    if not dart_files:
+      return _success(stamp_file)
 
     cmd.extend(dart_files)
     cmd.extend(args)
@@ -71,15 +83,11 @@ def main(args):
         print >> sys.stderr, line.replace(temp_dir + "/", dartzip_basename)
 
     if passed:
-      # We passed cleanly, so touch the stamp file so that we don't run again.
-      with open(stamp_file, 'a'):
-        os.utime(stamp_file, None)
-      return 0
+      return _success(stamp_file)
     else:
       return -2
   finally:
     shutil.rmtree(temp_dir)
-
 
 if __name__ == '__main__':
   sys.exit(main(sys.argv[1:]))

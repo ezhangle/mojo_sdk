@@ -7,7 +7,10 @@
 import("../mojo_sdk.gni")
 
 template("dart_package") {
-  action(target_name) {
+  package_target_name = "$target_name"
+  package_output = "$target_out_dir/$target_name.dartzip"
+
+  action("${package_target_name}_package") {
     script = rebase_path("mojo/public/tools/gn/zip.py", ".", mojo_root)
 
     inputs = invoker.sources
@@ -28,13 +31,14 @@ template("dart_package") {
       datadeps = invoker.datadeps
     }
 
-    output = "$target_out_dir/$target_name.dartzip"
+    output = package_output
     outputs = [
       output,
     ]
 
     rebase_base_dir =
-        rebase_path(get_label_info(":$target_name", "dir"), root_build_dir)
+        rebase_path(get_label_info(":$package_target_name", "dir"),
+                    root_build_dir)
     if (defined(invoker.base_dir)) {
       rebase_base_dir = invoker.base_dir
     }
@@ -48,25 +52,8 @@ template("dart_package") {
       "--output=$rebase_output",
     ]
   }
-}
 
-# Use this template to generate a .mojo dart application. One of the source
-# files should be named main.dart and contain a main function as the
-# entry point. Dependencies of dart_packaged_application targets should be
-# either mojom targets (and specified using the mojom_deps variable) or
-# dart_package targets.
-template("dart_packaged_application") {
-  package_name = "${target_name}_package"
-  package_analyze_sources = "${target_name}_analyze"
-  package_output = "$target_out_dir/$package_name.dartzip"
-
-  if (defined(invoker.output_name)) {
-    mojo_output = "$root_out_dir/" + invoker.output_name + ".mojo"
-  } else {
-    mojo_output = "$root_out_dir/" + target_name + ".mojo"
-  }
-
-  action(package_analyze_sources) {
+  action(target_name) {
     script = rebase_path("mojo/public/tools/dart_analyze.py", ".", mojo_root)
 
     sources = [
@@ -75,11 +62,13 @@ template("dart_packaged_application") {
 
     args = [
       rebase_path(package_output),
-      rebase_path("$target_gen_dir/${target_name}_analyze.stamp"),
+      rebase_path("$target_gen_dir/${package_target_name}_analyze.stamp"),
       "--no-hints",
     ]
 
-    deps = []
+    deps = [
+      ":${package_target_name}_package",
+    ]
     if (defined(invoker.deps)) {
       deps += invoker.deps
     }
@@ -89,8 +78,24 @@ template("dart_packaged_application") {
     }
 
     outputs = [
-      "$target_gen_dir/${target_name}_analyze.stamp",
+      "$target_gen_dir/${package_target_name}_analyze.stamp",
     ]
+  }
+}
+
+# Use this template to generate a .mojo dart application. One of the source
+# files should be named main.dart and contain a main function as the
+# entry point. Dependencies of dart_packaged_application targets should be
+# either mojom targets (and specified using the mojom_deps variable) or
+# dart_package targets.
+template("dart_packaged_application") {
+  package_name = "${target_name}_package"
+  package_output = "$target_out_dir/$package_name.dartzip"
+
+  if (defined(invoker.output_name)) {
+    mojo_output = "$root_out_dir/" + invoker.output_name + ".mojo"
+  } else {
+    mojo_output = "$root_out_dir/" + target_name + ".mojo"
   }
 
   dart_package(package_name) {
@@ -120,7 +125,6 @@ template("dart_packaged_application") {
     ]
 
     deps = [
-      ":$package_analyze_sources",
       ":$package_name",
     ]
     if (defined(invoker.deps)) {
