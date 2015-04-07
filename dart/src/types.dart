@@ -169,7 +169,10 @@ class MojoHandleSignals {
   static const PEER_CLOSED_READABLE =
       const MojoHandleSignals._(kPeerClosed | kReadable);
   static const READWRITE = const MojoHandleSignals._(kReadWrite);
+  static const PEER_CLOSED_WRITABLE =
+      const MojoHandleSignals._(kPeerClosed | kWritable);
   static const ALL = const MojoHandleSignals._(kAll);
+
 
   final int value;
 
@@ -189,6 +192,8 @@ class MojoHandleSignals {
         return READWRITE;
       case kPeerClosed | kReadable:
         return PEER_CLOSED_READABLE;
+      case kPeerClosed | kWritable:
+        return PEER_CLOSED_WRITABLE;
       case kAll:
         return ALL;
       default:
