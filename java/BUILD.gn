@@ -62,6 +62,7 @@ android_library("application") {
     "application/src/org/chromium/mojo/application/ApplicationImpl.java",
     "application/src/org/chromium/mojo/application/ApplicationRunner.java",
     "application/src/org/chromium/mojo/application/ServiceFactoryBinder.java",
+    "application/src/org/chromium/mojo/application/ShellHelper.java",
   ]
   deps = [
     ":bindings",
