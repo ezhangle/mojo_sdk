@@ -19,13 +19,17 @@ import sys
 import tempfile
 import zipfile
 
-_ANALYZING_PATTERN = re.compile(r'^Analyzing \[')
-_NO_ISSUES_FOUND_PATTERN = re.compile(r'^No issues found')
-_PART_WARNINGS_PATTERN = re.compile(
-  r'.*is a part and can not|^Only libraries can be analyzed')
-_ERRORS_AND_WARNINGS_PATTERN = re.compile(
-  r'^[0-9]+ errors? and [0-9]+ warnings? found.')
-_ERRORS_PATTERN = re.compile(r'^([0-9]+|No) (error|warning|issue)s? found.')
+_IGNORED_PATTERNS = [
+  # Ignored because they're not indicative of specific errors.
+  re.compile(r'^$'),
+  re.compile(r'^Analyzing \['),
+  re.compile(r'^No issues found'),
+  re.compile(r'^[0-9]+ errors? and [0-9]+ warnings? found.'),
+  re.compile(r'^([0-9]+|No) (error|warning|issue)s? found.'),
+
+  # TODO: It seems like this should be re-enabled evenutally.
+  re.compile(r'.*is a part and can not|^Only libraries can be analyzed'),
+]
 
 def _success(stamp_file):
   # We passed cleanly, so touch the stamp file so that we don't run again.
@@ -63,29 +67,18 @@ def main(args):
     cmd.append("--package-root=%s" % temp_dir)
     cmd.append("--fatal-warnings")
 
-    passed = True
+    errors = 0
     try:
       subprocess.check_output(cmd, shell=False, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
-      # Perform post processing on the output. Filter out non-error messages and
-      # known problem patterns that we're working on.
-      raw_lines = e.output.split('\n')
-      # Remove the last empty line
-      raw_lines.pop()
-      filtered_lines = [i for i in raw_lines if (
-        not re.match(_ANALYZING_PATTERN, i) and
-        not re.match(_NO_ISSUES_FOUND_PATTERN, i) and
-        not re.match(_PART_WARNINGS_PATTERN, i) and
-        not re.match(_ERRORS_AND_WARNINGS_PATTERN, i) and
-        not re.match(_ERRORS_PATTERN, i))]
-      for line in filtered_lines:
-        passed = False
-        print >> sys.stderr, line.replace(temp_dir + "/", dartzip_basename)
+      errors = set(l for l in e.output.split('\n')
+                   if not any(p.match(l) for p in _IGNORED_PATTERNS))
+      for error in sorted(errors):
+        print >> sys.stderr, error.replace(temp_dir + "/", dartzip_basename)
 
-    if passed:
+    if not errors:
       return _success(stamp_file)
-    else:
-      return -2
+    return min(255, len(errors))
   finally:
     shutil.rmtree(temp_dir)
 
