@@ -34,13 +34,8 @@ define("mojo/public/js/validator", [
     return cls === codec.Handle || cls === codec.NullableHandle;
   }
 
-  function isInterfaceClass(cls) {
-    return cls === codec.Interface || cls === codec.NullableInterface;
-  }
-
   function isNullable(type) {
     return type === codec.NullableString || type === codec.NullableHandle ||
-        type === codec.NullableInterface ||
         type instanceof codec.NullableArrayOf ||
         type instanceof codec.NullablePointerTo;
   }
@@ -106,10 +101,6 @@ define("mojo/public/js/validator", [
     if (!this.claimHandle(index))
       return validationError.ILLEGAL_HANDLE;
     return validationError.NONE;
-  }
-
-  Validator.prototype.validateInterface = function(offset, nullable) {
-    return this.validateHandle(offset, nullable);
   }
 
   Validator.prototype.validateStructHeader =
@@ -300,9 +291,6 @@ define("mojo/public/js/validator", [
 
     if (isHandleClass(elementType))
       return this.validateHandleElements(elementsOffset, numElements, nullable);
-    if (isInterfaceClass(elementType))
-      return this.validateInterfaceElements(
-          elementsOffset, numElements, nullable);
     if (isStringClass(elementType))
       return this.validateArrayElements(
           elementsOffset, numElements, codec.Uint8, nullable, [0], 0);
@@ -327,18 +315,6 @@ define("mojo/public/js/validator", [
     for (var i = 0; i < numElements; i++) {
       var elementOffset = offset + i * elementSize;
       var err = this.validateHandle(elementOffset, nullable);
-      if (err != validationError.NONE)
-        return err;
-    }
-    return validationError.NONE;
-  }
-
-  Validator.prototype.validateInterfaceElements =
-      function(offset, numElements, nullable) {
-    var elementSize = codec.Interface.encodedSize;
-    for (var i = 0; i < numElements; i++) {
-      var elementOffset = offset + i * elementSize;
-      var err = this.validateInterface(elementOffset, nullable);
       if (err != validationError.NONE)
         return err;
     }

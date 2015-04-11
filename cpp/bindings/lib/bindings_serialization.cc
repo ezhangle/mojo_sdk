@@ -4,6 +4,7 @@
 
 #include "mojo/public/cpp/bindings/lib/bindings_serialization.h"
 
+#include "mojo/public/cpp/bindings/lib/bindings_internal.h"
 #include "mojo/public/cpp/bindings/lib/bounds_checker.h"
 #include "mojo/public/cpp/bindings/lib/validation_errors.h"
 #include "mojo/public/cpp/environment/logging.h"
@@ -68,10 +69,6 @@ void EncodeHandle(Handle* handle, std::vector<Handle>* handles) {
   }
 }
 
-void EncodeHandle(Interface_Data* data, std::vector<Handle>* handles) {
-  EncodeHandle(&data->handle, handles);
-}
-
 void DecodeHandle(Handle* handle, std::vector<Handle>* handles) {
   if (handle->value() == kEncodedInvalidHandleValue) {
     *handle = Handle();
@@ -80,10 +77,6 @@ void DecodeHandle(Handle* handle, std::vector<Handle>* handles) {
   MOJO_DCHECK(handle->value() < handles->size());
   // Just leave holes in the vector so we don't screw up other indices.
   *handle = FetchAndReset(&handles->at(handle->value()));
-}
-
-void DecodeHandle(Interface_Data* data, std::vector<Handle>* handles) {
-  DecodeHandle(&data->handle, handles);
 }
 
 bool ValidateStructHeaderAndClaimMemory(const void* data,
