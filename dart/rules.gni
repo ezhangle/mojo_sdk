@@ -4,23 +4,64 @@
 
 # Rules to generate python packaged applications for Dart
 
-import("../mojo_sdk.gni")
+import("//build/module_args/mojo.gni")
 
 template("dart_package") {
   package_target_name = "$target_name"
   package_output = "$target_out_dir/$target_name.dartzip"
 
+  if (defined(invoker.uses_pub) && invoker.uses_pub) {
+    # Repackage all dependencies pulled in via "pub get" in a dartzip file.
+    action("${package_target_name}_repackage") {
+      target_dir = get_label_info(":$target_name", "dir")
+      script = rebase_path("mojo/public/tools/gn/zip.py", ".", mojo_sdk_root)
+
+      # Get a list of the files in packages/ as inputs.
+      list_packages_contents_script =
+          rebase_path("mojo/public/tools/dart_list_packages_contents.py",
+                      ".",
+                      mojo_sdk_root)
+      rebase_target_dir = rebase_path(target_dir, root_build_dir)
+      inputs = exec_script(list_packages_contents_script,
+                           [
+                             "--target-directory",
+                             rebase_target_dir,
+                           ],
+                           "list lines",
+                           [ target_dir + "/pubspec.lock" ])
+
+      # Zip up all the pulled-in files relative to their location in the
+      # packages dir.
+      output = "$target_out_dir/$target_name.dartzip"
+      outputs = [
+        output,
+      ]
+      rebase_base_dir = rebase_target_dir + "/packages"
+      rebase_inputs = rebase_path(inputs, root_build_dir)
+      rebase_output = rebase_path(output, root_build_dir)
+      args = [
+        "--base-dir=$rebase_base_dir",
+        "--inputs=$rebase_inputs",
+        "--output=$rebase_output",
+      ]
+    }
+  }
+
   action("${package_target_name}_package") {
-    script = rebase_path("mojo/public/tools/gn/zip.py", ".", mojo_root)
+    script = rebase_path("mojo/public/tools/gn/zip.py", ".", mojo_sdk_root)
 
     inputs = invoker.sources
 
     deps = []
     zip_inputs = []
 
+    if (defined(invoker.uses_pub) && invoker.uses_pub) {
+      deps += [ ":${package_target_name}_repackage" ]
+    }
+
     if (defined(invoker.deps)) {
       deps += invoker.deps
-      foreach(d, invoker.deps) {
+      foreach(d, deps) {
         dep_name = get_label_info(d, "name")
         dep_target_out_dir = get_label_info(d, "target_out_dir")
         zip_inputs += [ "$dep_target_out_dir/$dep_name.dartzip" ]
@@ -54,7 +95,8 @@ template("dart_package") {
   }
 
   action(target_name) {
-    script = rebase_path("mojo/public/tools/dart_analyze.py", ".", mojo_root)
+    script =
+        rebase_path("mojo/public/tools/dart_analyze.py", ".", mojo_sdk_root)
 
     sources = [
       package_output,
@@ -103,6 +145,9 @@ template("dart_packaged_application") {
     if (defined(invoker.deps)) {
       deps = invoker.deps
     }
+    if (defined(invoker.uses_pub)) {
+      uses_pub = invoker.uses_pub
+    }
     if (defined(invoker.mojom_deps)) {
       mojom_deps = invoker.mojom_deps
     }
@@ -112,7 +157,7 @@ template("dart_packaged_application") {
   }
 
   action(target_name) {
-    script = rebase_path("mojo/public/tools/prepend.py", ".", mojo_root)
+    script = rebase_path("mojo/public/tools/prepend.py", ".", mojo_sdk_root)
 
     input = package_output
     inputs = [
