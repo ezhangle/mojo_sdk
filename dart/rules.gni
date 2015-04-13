@@ -106,6 +106,8 @@ template("dart_package") {
       rebase_path(package_output),
       rebase_path("$target_gen_dir/${package_target_name}_analyze.stamp"),
       "--no-hints",
+      "--url-mapping=dart:mojo.io,/" +
+          rebase_path("mojo/public/dart/io.dart", "/", mojo_sdk_root),
     ]
 
     deps = [
