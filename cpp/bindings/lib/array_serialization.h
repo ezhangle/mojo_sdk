@@ -21,24 +21,12 @@ namespace mojo {
 template <typename E>
 inline size_t GetSerializedSize_(const Array<E>& input);
 
-// Because ValidateParams requires explicit argument specification, the
-// argument-dependent loopup technique used to omit namespace when calling
-// Serialize_() doesn't seem to work. Therefore, this function is named
-// differently from those Serialize_() overloads.
-template <typename ValidateParams, typename E, typename F>
-inline void SerializeArray_(Array<E> input,
-                            internal::Buffer* buf,
-                            internal::Array_Data<F>** output);
-
-template <typename ValueValidateParams,
-          typename KeyWrapperType,
-          typename ValueWrapperType,
-          typename KeySerializationType,
-          typename ValueSerializationType>
-inline void SerializeMap_(
-    Map<KeyWrapperType, ValueWrapperType> input,
+template <typename E, typename F>
+inline void SerializeArray_(
+    Array<E> input,
     internal::Buffer* buf,
-    internal::Map_Data<KeySerializationType, ValueSerializationType>** output);
+    internal::Array_Data<F>** output,
+    const internal::ArrayValidateParams* validate_params);
 
 template <typename E, typename F>
 inline void Deserialize_(internal::Array_Data<F>* data, Array<E>* output);
@@ -58,14 +46,15 @@ struct ArraySerializer<E, F, false> {
   static size_t GetSerializedSize(const Array<E>& input) {
     return sizeof(Array_Data<F>) + Align(input.size() * sizeof(E));
   }
-  template <bool element_is_nullable, typename ElementValidateParams>
+
   static void SerializeElements(Array<E> input,
                                 Buffer* buf,
-                                Array_Data<F>* output) {
-    static_assert(!element_is_nullable,
-                  "Primitive type should be non-nullable");
-    static_assert((IsSame<ElementValidateParams, NoValidateParams>::value),
-                  "Primitive type should not have array validate params");
+                                Array_Data<F>* output,
+                                const ArrayValidateParams* validate_params) {
+    MOJO_DCHECK(!validate_params->element_is_nullable)
+        << "Primitive type should be non-nullable";
+    MOJO_DCHECK(!validate_params->element_validate_params)
+        << "Primitive type should not have array validate params";
 
     if (input.size())
       memcpy(output->storage(), &input.storage()[0], input.size() * sizeof(E));
@@ -84,14 +73,15 @@ struct ArraySerializer<bool, bool, false> {
   static size_t GetSerializedSize(const Array<bool>& input) {
     return sizeof(Array_Data<bool>) + Align((input.size() + 7) / 8);
   }
-  template <bool element_is_nullable, typename ElementValidateParams>
+
   static void SerializeElements(Array<bool> input,
                                 Buffer* buf,
-                                Array_Data<bool>* output) {
-    static_assert(!element_is_nullable,
-                  "Primitive type should be non-nullable");
-    static_assert((IsSame<ElementValidateParams, NoValidateParams>::value),
-                  "Primitive type should not have array validate params");
+                                Array_Data<bool>* output,
+                                const ArrayValidateParams* validate_params) {
+    MOJO_DCHECK(!validate_params->element_is_nullable)
+        << "Primitive type should be non-nullable";
+    MOJO_DCHECK(!validate_params->element_validate_params)
+        << "Primitive type should not have array validate params";
 
     // TODO(darin): Can this be a memcpy somehow instead of a bit-by-bit copy?
     for (size_t i = 0; i < input.size(); ++i)
@@ -113,21 +103,21 @@ struct ArraySerializer<ScopedHandleBase<H>, H, false> {
   static size_t GetSerializedSize(const Array<ScopedHandleBase<H>>& input) {
     return sizeof(Array_Data<H>) + Align(input.size() * sizeof(H));
   }
-  template <bool element_is_nullable, typename ElementValidateParams>
+
   static void SerializeElements(Array<ScopedHandleBase<H>> input,
                                 Buffer* buf,
-                                Array_Data<H>* output) {
-    static_assert((IsSame<ElementValidateParams, NoValidateParams>::value),
-                  "Handle type should not have array validate params");
+                                Array_Data<H>* output,
+                                const ArrayValidateParams* validate_params) {
+    MOJO_DCHECK(!validate_params->element_validate_params)
+        << "Handle type should not have array validate params";
 
     for (size_t i = 0; i < input.size(); ++i) {
       output->at(i) = input[i].release();  // Transfer ownership of the handle.
       MOJO_INTERNAL_DLOG_SERIALIZATION_WARNING(
-          !element_is_nullable && !output->at(i).is_valid(),
+          !validate_params->element_is_nullable && !output->at(i).is_valid(),
           VALIDATION_ERROR_UNEXPECTED_INVALID_HANDLE,
           MakeMessageWithArrayIndex(
-              "invalid handle in array expecting valid handles",
-              input.size(),
+              "invalid handle in array expecting valid handles", input.size(),
               i));
     }
   }
@@ -157,20 +147,21 @@ struct ArraySerializer<
       size += GetSerializedSize_(input[i]);
     return size;
   }
-  template <bool element_is_nullable, typename ElementValidateParams>
+
   static void SerializeElements(Array<S> input,
                                 Buffer* buf,
-                                Array_Data<S_Data*>* output) {
+                                Array_Data<S_Data*>* output,
+                                const ArrayValidateParams* validate_params) {
     for (size_t i = 0; i < input.size(); ++i) {
       S_Data* element;
-      SerializeCaller<S, ElementValidateParams>::Run(
-          input[i].Pass(), buf, &element);
+      SerializeCaller<S>::Run(input[i].Pass(), buf, &element,
+                              validate_params->element_validate_params);
       output->at(i) = element;
       MOJO_INTERNAL_DLOG_SERIALIZATION_WARNING(
-          !element_is_nullable && !element,
+          !validate_params->element_is_nullable && !element,
           VALIDATION_ERROR_UNEXPECTED_NULL_POINTER,
-          MakeMessageWithArrayIndex(
-              "null in array expecting valid pointers", input.size(), i));
+          MakeMessageWithArrayIndex("null in array expecting valid pointers",
+                                    input.size(), i));
     }
   }
   static void DeserializeElements(Array_Data<S_Data*>* input,
@@ -183,33 +174,36 @@ struct ArraySerializer<
   }
 
  private:
-  template <typename T, typename Params>
+  template <typename T>
   struct SerializeCaller {
     static void Run(T input,
                     Buffer* buf,
-                    typename WrapperTraits<T>::DataType* output) {
-      static_assert((IsSame<Params, NoValidateParams>::value),
-                    "Struct type should not have array validate params");
+                    typename WrapperTraits<T>::DataType* output,
+                    const ArrayValidateParams* validate_params) {
+      MOJO_DCHECK(!validate_params)
+          << "Struct type should not have array validate params";
 
       Serialize_(input.Pass(), buf, output);
     }
   };
 
-  template <typename T, typename Params>
-  struct SerializeCaller<Array<T>, Params> {
+  template <typename T>
+  struct SerializeCaller<Array<T>> {
     static void Run(Array<T> input,
                     Buffer* buf,
-                    typename Array<T>::Data_** output) {
-      SerializeArray_<Params>(input.Pass(), buf, output);
+                    typename Array<T>::Data_** output,
+                    const ArrayValidateParams* validate_params) {
+      SerializeArray_(input.Pass(), buf, output, validate_params);
     }
   };
 
-  template <typename T, typename U, typename Params>
-  struct SerializeCaller<Map<T, U>, Params> {
+  template <typename T, typename U>
+  struct SerializeCaller<Map<T, U>> {
     static void Run(Map<T, U> input,
                     Buffer* buf,
-                    typename Map<T, U>::Data_** output) {
-      SerializeMap_<Params>(input.Pass(), buf, output);
+                    typename Map<T, U>::Data_** output,
+                    const ArrayValidateParams* validate_params) {
+      SerializeMap_(input.Pass(), buf, output, validate_params);
     }
   };
 };
@@ -227,15 +221,15 @@ struct ArraySerializer<U, U_Data, true> {
     return size;
   }
 
-  template <bool element_is_nullable, typename ElementValidateParams>
   static void SerializeElements(Array<U> input,
                                 Buffer* buf,
-                                Array_Data<U_Data>* output) {
+                                Array_Data<U_Data>* output,
+                                const ArrayValidateParams* validate_params) {
     for (size_t i = 0; i < input.size(); ++i) {
       U_Data* result = output->storage() + i;
       SerializeUnion_(input[i].Pass(), buf, &result, true);
       MOJO_INTERNAL_DLOG_SERIALIZATION_WARNING(
-          !element_is_nullable && output->at(i).is_null(),
+          !validate_params->element_is_nullable && output->at(i).is_null(),
           VALIDATION_ERROR_UNEXPECTED_NULL_POINTER,
           MakeMessageWithArrayIndex("null in array expecting valid unions",
                                     input.size(), i));
@@ -261,24 +255,27 @@ struct ArraySerializer<String, String_Data*> {
       size += GetSerializedSize_(input[i]);
     return size;
   }
-  template <bool element_is_nullable, typename ElementValidateParams>
+
   static void SerializeElements(Array<String> input,
                                 Buffer* buf,
-                                Array_Data<String_Data*>* output) {
-    static_assert(
-        (IsSame<ElementValidateParams,
-                ArrayValidateParams<0, false, NoValidateParams>>::value),
-        "String type has unexpected array validate params");
+                                Array_Data<String_Data*>* output,
+                                const ArrayValidateParams* validate_params) {
+    MOJO_DCHECK(
+        validate_params->element_validate_params &&
+        !validate_params->element_validate_params->element_validate_params &&
+        !validate_params->element_validate_params->element_is_nullable &&
+        validate_params->element_validate_params->expected_num_elements == 0)
+        << "String type has unexpected array validate params";
 
     for (size_t i = 0; i < input.size(); ++i) {
       String_Data* element;
       Serialize_(input[i], buf, &element);
       output->at(i) = element;
       MOJO_INTERNAL_DLOG_SERIALIZATION_WARNING(
-          !element_is_nullable && !element,
+          !validate_params->element_is_nullable && !element,
           VALIDATION_ERROR_UNEXPECTED_NULL_POINTER,
-          MakeMessageWithArrayIndex(
-              "null in array expecting valid strings", input.size(), i));
+          MakeMessageWithArrayIndex("null in array expecting valid strings",
+                                    input.size(), i));
     }
   }
   static void DeserializeElements(Array_Data<String_Data*>* input,
@@ -300,27 +297,26 @@ inline size_t GetSerializedSize_(const Array<E>& input) {
   return internal::ArraySerializer<E, F>::GetSerializedSize(input);
 }
 
-template <typename ValidateParams, typename E, typename F>
-inline void SerializeArray_(Array<E> input,
-                            internal::Buffer* buf,
-                            internal::Array_Data<F>** output) {
+template <typename E, typename F>
+inline void SerializeArray_(
+    Array<E> input,
+    internal::Buffer* buf,
+    internal::Array_Data<F>** output,
+    const internal::ArrayValidateParams* validate_params) {
   if (input) {
     MOJO_INTERNAL_DLOG_SERIALIZATION_WARNING(
-        ValidateParams::expected_num_elements != 0 &&
-            input.size() != ValidateParams::expected_num_elements,
+        validate_params->expected_num_elements != 0 &&
+            input.size() != validate_params->expected_num_elements,
         internal::VALIDATION_ERROR_UNEXPECTED_ARRAY_HEADER,
         internal::MakeMessageWithExpectedArraySize(
-            "fixed-size array has wrong number of elements",
-            input.size(),
-            ValidateParams::expected_num_elements));
+            "fixed-size array has wrong number of elements", input.size(),
+            validate_params->expected_num_elements));
 
     internal::Array_Data<F>* result =
         internal::Array_Data<F>::New(input.size(), buf);
     if (result) {
-      internal::ArraySerializer<E, F>::template SerializeElements<
-          ValidateParams::element_is_nullable,
-          typename ValidateParams::ElementValidateParams>(
-          internal::Forward(input), buf, result);
+      internal::ArraySerializer<E, F>::SerializeElements(
+          internal::Forward(input), buf, result, validate_params);
     }
     *output = result;
   } else {
