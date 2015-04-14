@@ -33,10 +33,10 @@ const MojoHandle MOJO_HANDLE_INVALID = 0;
 #define MOJO_HANDLE_INVALID ((MojoHandle)0)
 #endif
 
-// |MojoResult|: Result codes for Mojo operations. Non-negative values are
-// success codes; negative values are error/failure codes.
-//   |MOJO_RESULT_OK| - Not an error; returned on success. Note that positive
-//       |MojoResult|s may also be used to indicate success.
+// |MojoResult|: Result codes for Mojo operations. The only success code is zero
+// (|MOJO_RESULT_OK|); all non-zero values should be considered as error/failure
+// codes (even if the value is not recognized).
+//   |MOJO_RESULT_OK| - Not an error; returned on success.
 //   |MOJO_RESULT_CANCELLED| - Operation was cancelled, typically by the caller.
 //   |MOJO_RESULT_UNKNOWN| - Unknown error (e.g., if not enough information is
 //       available for a more specific error).
@@ -81,8 +81,6 @@ const MojoHandle MOJO_HANDLE_INVALID = 0;
 //   |MOJO_RESULT_SHOULD_WAIT| - The request cannot currently be completed
 //       (e.g., if the data requested is not yet available). The caller should
 //       wait for it to be feasible using |MojoWait()| or |MojoWaitMany()|.
-//
-// Note that positive values are also available as success codes.
 //
 // The codes from |MOJO_RESULT_OK| to |MOJO_RESULT_DATA_LOSS| come from
 // Google3's canonical error codes.
