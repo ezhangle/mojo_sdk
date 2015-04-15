@@ -31,7 +31,7 @@ bool DcheckTestHelper(bool* was_called) {
 
 class LoggingTest : public testing::Test {
  public:
-  LoggingTest() : environment_(nullptr, &kMockLogger, nullptr) {
+  LoggingTest() : environment_(nullptr, &kMockLogger) {
     minimum_log_level_ = MOJO_LOG_LEVEL_INFO;
     ResetMockLogger();
   }

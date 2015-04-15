@@ -12,8 +12,6 @@ struct MojoLogger;
 
 namespace mojo {
 
-struct TaskTracker;
-
 // Other parts of the Mojo C++ APIs use the *static* methods of this class.
 //
 // The "standalone" implementation of this class requires that this class (in
@@ -28,13 +26,11 @@ class Environment {
   // This constructor allows the standard implementations to be overridden (set
   // a parameter to null to get the standard implementation).
   Environment(const MojoAsyncWaiter* default_async_waiter,
-              const MojoLogger* default_logger,
-              const TaskTracker* default_task_tracker);
+              const MojoLogger* default_logger);
   ~Environment();
 
   static const MojoAsyncWaiter* GetDefaultAsyncWaiter();
   static const MojoLogger* GetDefaultLogger();
-  static const TaskTracker* GetDefaultTaskTracker();
 
   // These instantiate and destroy an environment-specific run loop for the
   // current thread, allowing |GetDefaultAsyncWaiter()| to be used. (The run
