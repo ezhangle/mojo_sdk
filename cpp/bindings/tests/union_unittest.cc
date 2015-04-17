@@ -588,5 +588,96 @@ TEST(UnionTest, PodUnionInMapSerializationWithNull) {
   EXPECT_TRUE(map2["two"].is_null());
 }
 
+TEST(UnionTest, StructInUnionGetterSetterPasser) {
+  DummyStructPtr dummy(DummyStruct::New());
+  dummy->f_int8 = 8;
+
+  ObjectUnionPtr obj(ObjectUnion::New());
+  obj->set_f_dummy(dummy.Pass());
+
+  EXPECT_EQ(8, obj->get_f_dummy()->f_int8);
+}
+
+TEST(UnionTest, StructInUnionSerialization) {
+  Environment environment;
+  DummyStructPtr dummy(DummyStruct::New());
+  dummy->f_int8 = 8;
+
+  ObjectUnionPtr obj(ObjectUnion::New());
+  obj->set_f_dummy(dummy.Pass());
+
+  size_t size = GetSerializedSize_(obj, false);
+  EXPECT_EQ(32U, size);
+
+  mojo::internal::FixedBuffer buf(size);
+  internal::ObjectUnion_Data* data = nullptr;
+  SerializeUnion_(obj.Pass(), &buf, &data, false);
+
+  ObjectUnionPtr obj2;
+  Deserialize_(data, &obj2);
+  EXPECT_EQ(8, obj2->get_f_dummy()->f_int8);
+}
+
+TEST(UnionTest, StructInUnionValidation) {
+  Environment environment;
+  DummyStructPtr dummy(DummyStruct::New());
+  dummy->f_int8 = 8;
+
+  ObjectUnionPtr obj(ObjectUnion::New());
+  obj->set_f_dummy(dummy.Pass());
+
+  size_t size = GetSerializedSize_(obj, false);
+
+  mojo::internal::FixedBuffer buf(size);
+  internal::ObjectUnion_Data* data = nullptr;
+  SerializeUnion_(obj.Pass(), &buf, &data, false);
+
+  void* raw_buf = buf.Leak();
+  mojo::internal::BoundsChecker bounds_checker(data,
+                                               static_cast<uint32_t>(size), 0);
+  EXPECT_TRUE(
+      internal::ObjectUnion_Data::Validate(raw_buf, &bounds_checker, false));
+}
+
+TEST(UnionTest, StructInUnionValidationNonNullable) {
+  Environment environment;
+  DummyStructPtr dummy(nullptr);
+
+  ObjectUnionPtr obj(ObjectUnion::New());
+  obj->set_f_dummy(dummy.Pass());
+
+  size_t size = GetSerializedSize_(obj, false);
+
+  mojo::internal::FixedBuffer buf(size);
+  internal::ObjectUnion_Data* data = nullptr;
+  SerializeUnion_(obj.Pass(), &buf, &data, false);
+
+  void* raw_buf = buf.Leak();
+  mojo::internal::BoundsChecker bounds_checker(data,
+                                               static_cast<uint32_t>(size), 0);
+  EXPECT_FALSE(
+      internal::ObjectUnion_Data::Validate(raw_buf, &bounds_checker, false));
+}
+
+TEST(UnionTest, StructInUnionValidationNullable) {
+  Environment environment;
+  DummyStructPtr dummy(nullptr);
+
+  ObjectUnionPtr obj(ObjectUnion::New());
+  obj->set_f_nullable(dummy.Pass());
+
+  size_t size = GetSerializedSize_(obj, false);
+
+  mojo::internal::FixedBuffer buf(size);
+  internal::ObjectUnion_Data* data = nullptr;
+  SerializeUnion_(obj.Pass(), &buf, &data, false);
+
+  void* raw_buf = buf.Leak();
+  mojo::internal::BoundsChecker bounds_checker(data,
+                                               static_cast<uint32_t>(size), 0);
+  EXPECT_TRUE(
+      internal::ObjectUnion_Data::Validate(raw_buf, &bounds_checker, false));
+}
+
 }  // namespace test
 }  // namespace mojo

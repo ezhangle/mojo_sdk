@@ -22,6 +22,8 @@ union PodUnion {
 union ObjectUnion {
   int8   f_int8;
   string f_string;
+  DummyStruct f_dummy;
+  DummyStruct? f_nullable;
 };
 
 struct DummyStruct {
