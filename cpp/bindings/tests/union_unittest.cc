@@ -524,5 +524,69 @@ TEST(UnionTest, Validation_NullableUnion) {
   free(raw_buf);
 }
 
+// TODO(azani): Move back in map_unittest.cc when possible.
+// Map Tests
+TEST(UnionTest, PodUnionInMap) {
+  SmallStructPtr small_struct(SmallStruct::New());
+  small_struct->pod_union_map = Map<String, PodUnionPtr>();
+  small_struct->pod_union_map.insert("one", PodUnion::New());
+  small_struct->pod_union_map.insert("two", PodUnion::New());
+
+  small_struct->pod_union_map["one"]->set_f_int8(8);
+  small_struct->pod_union_map["two"]->set_f_int16(16);
+
+  EXPECT_EQ(8, small_struct->pod_union_map["one"]->get_f_int8());
+  EXPECT_EQ(16, small_struct->pod_union_map["two"]->get_f_int16());
+}
+
+TEST(UnionTest, PodUnionInMapSerialization) {
+  Environment environment;
+  Map<String, PodUnionPtr> map;
+  map.insert("one", PodUnion::New());
+  map.insert("two", PodUnion::New());
+
+  map["one"]->set_f_int8(8);
+  map["two"]->set_f_int16(16);
+
+  size_t size = GetSerializedSize_(map);
+  EXPECT_EQ(120U, size);
+
+  mojo::internal::FixedBuffer buf(size);
+  mojo::internal::Map_Data<mojo::internal::String_Data*,
+                           internal::PodUnion_Data>* data;
+  mojo::internal::ArrayValidateParams validate_params(0, false, nullptr);
+  SerializeMap_(map.Pass(), &buf, &data, &validate_params);
+
+  Map<String, PodUnionPtr> map2;
+  Deserialize_(data, &map2);
+
+  EXPECT_EQ(8, map2["one"]->get_f_int8());
+  EXPECT_EQ(16, map2["two"]->get_f_int16());
+}
+
+TEST(UnionTest, PodUnionInMapSerializationWithNull) {
+  Environment environment;
+  Map<String, PodUnionPtr> map;
+  map.insert("one", PodUnion::New());
+  map.insert("two", nullptr);
+
+  map["one"]->set_f_int8(8);
+
+  size_t size = GetSerializedSize_(map);
+  EXPECT_EQ(120U, size);
+
+  mojo::internal::FixedBuffer buf(size);
+  mojo::internal::Map_Data<mojo::internal::String_Data*,
+                           internal::PodUnion_Data>* data;
+  mojo::internal::ArrayValidateParams validate_params(0, true, nullptr);
+  SerializeMap_(map.Pass(), &buf, &data, &validate_params);
+
+  Map<String, PodUnionPtr> map2;
+  Deserialize_(data, &map2);
+
+  EXPECT_EQ(8, map2["one"]->get_f_int8());
+  EXPECT_TRUE(map2["two"].is_null());
+}
+
 }  // namespace test
 }  // namespace mojo

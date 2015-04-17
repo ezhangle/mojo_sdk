@@ -33,6 +33,7 @@ struct SmallStruct {
   PodUnion? pod_union;
   array<PodUnion>? pod_union_array;
   array<DummyStruct>? s_array;
+  map<string, PodUnion>? pod_union_map;
 };
 
 struct SmallStructNonNullableUnion {
