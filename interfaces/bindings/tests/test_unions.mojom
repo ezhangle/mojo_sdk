@@ -26,6 +26,7 @@ union ObjectUnion {
   DummyStruct? f_nullable;
   array<int8> f_array_int8;
   map<string, int8> f_map_int8;
+  PodUnion f_pod_union;
 };
 
 struct DummyStruct {

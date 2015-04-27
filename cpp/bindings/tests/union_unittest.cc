@@ -275,6 +275,10 @@ TEST(UnionTest, StringSerialization) {
   internal::ObjectUnion_Data* data = nullptr;
   SerializeUnion_(pod1.Pass(), &buf, &data, false);
 
+  std::vector<Handle> handles;
+  data->EncodePointersAndHandles(&handles);
+  data->DecodePointersAndHandles(&handles);
+
   ObjectUnionPtr pod2;
   Deserialize_(data, &pod2);
   EXPECT_EQ(hello, pod2->get_f_string());
@@ -319,7 +323,7 @@ TEST(UnionTest, StringValidateOOB) {
   internal::ObjectUnion_Data* data = internal::ObjectUnion_Data::New(&buf);
   data->tag = internal::ObjectUnion_Data::ObjectUnion_Tag::F_STRING;
 
-  data->data.f_f_string = 8;
+  data->data.f_f_string.offset = 8;
   char* ptr = reinterpret_cast<char*>(&data->data.f_f_string);
   mojo::internal::ArrayHeader* array_header =
       reinterpret_cast<mojo::internal::ArrayHeader*>(ptr + *ptr);
@@ -443,6 +447,10 @@ TEST(UnionTest, Serialization_UnionOfObjects) {
   mojo::internal::FixedBuffer buf(size);
   internal::SmallObjStruct_Data* data = nullptr;
   Serialize_(obj_struct.Pass(), &buf, &data);
+
+  std::vector<Handle> handles;
+  data->EncodePointersAndHandles(&handles);
+  data->DecodePointersAndHandles(&handles);
 
   SmallObjStructPtr deserialized;
   Deserialize_(data, &deserialized);
@@ -613,6 +621,10 @@ TEST(UnionTest, StructInUnionSerialization) {
   mojo::internal::FixedBuffer buf(size);
   internal::ObjectUnion_Data* data = nullptr;
   SerializeUnion_(obj.Pass(), &buf, &data, false);
+
+  std::vector<Handle> handles;
+  data->EncodePointersAndHandles(&handles);
+  data->DecodePointersAndHandles(&handles);
 
   ObjectUnionPtr obj2;
   Deserialize_(data, &obj2);
@@ -816,6 +828,89 @@ TEST(UnionTest, MapInUnionValidation) {
                                                static_cast<uint32_t>(size), 0);
 
   EXPECT_TRUE(
+      internal::ObjectUnion_Data::Validate(raw_buf, &bounds_checker, false));
+  free(raw_buf);
+}
+
+TEST(UnionTest, UnionInUnionGetterSetter) {
+  PodUnionPtr pod(PodUnion::New());
+  pod->set_f_int8(10);
+
+  ObjectUnionPtr obj(ObjectUnion::New());
+  obj->set_f_pod_union(pod.Pass());
+
+  EXPECT_EQ(10, obj->get_f_pod_union()->get_f_int8());
+}
+
+TEST(UnionTest, UnionInUnionSerialization) {
+  Environment environment;
+  PodUnionPtr pod(PodUnion::New());
+  pod->set_f_int8(10);
+
+  ObjectUnionPtr obj(ObjectUnion::New());
+  obj->set_f_pod_union(pod.Pass());
+
+  size_t size = GetSerializedSize_(obj, false);
+  EXPECT_EQ(32U, size);
+
+  mojo::internal::FixedBuffer buf(size);
+  internal::ObjectUnion_Data* data = nullptr;
+  SerializeUnion_(obj.Pass(), &buf, &data, false);
+
+  std::vector<Handle> handles;
+  data->EncodePointersAndHandles(&handles);
+  data->DecodePointersAndHandles(&handles);
+
+  ObjectUnionPtr obj2;
+  Deserialize_(data, &obj2);
+  EXPECT_EQ(10, obj2->get_f_pod_union()->get_f_int8());
+}
+
+TEST(UnionTest, UnionInUnionValidation) {
+  Environment environment;
+  PodUnionPtr pod(PodUnion::New());
+  pod->set_f_int8(10);
+
+  ObjectUnionPtr obj(ObjectUnion::New());
+  obj->set_f_pod_union(pod.Pass());
+
+  size_t size = GetSerializedSize_(obj, false);
+  EXPECT_EQ(32U, size);
+
+  mojo::internal::FixedBuffer buf(size);
+  internal::ObjectUnion_Data* data = nullptr;
+  SerializeUnion_(obj.Pass(), &buf, &data, false);
+
+  std::vector<Handle> handles;
+  data->EncodePointersAndHandles(&handles);
+
+  void* raw_buf = buf.Leak();
+  mojo::internal::BoundsChecker bounds_checker(data,
+                                               static_cast<uint32_t>(size), 0);
+  EXPECT_TRUE(
+      internal::ObjectUnion_Data::Validate(raw_buf, &bounds_checker, false));
+  free(raw_buf);
+}
+
+TEST(UnionTest, UnionInUnionValidationNonNullable) {
+  Environment environment;
+  PodUnionPtr pod(nullptr);
+
+  ObjectUnionPtr obj(ObjectUnion::New());
+  obj->set_f_pod_union(pod.Pass());
+
+  size_t size = GetSerializedSize_(obj, false);
+
+  mojo::internal::FixedBuffer buf(size);
+  internal::ObjectUnion_Data* data = nullptr;
+  SerializeUnion_(obj.Pass(), &buf, &data, false);
+  std::vector<Handle> handles;
+  data->EncodePointersAndHandles(&handles);
+
+  void* raw_buf = buf.Leak();
+  mojo::internal::BoundsChecker bounds_checker(data,
+                                               static_cast<uint32_t>(size), 0);
+  EXPECT_FALSE(
       internal::ObjectUnion_Data::Validate(raw_buf, &bounds_checker, false));
   free(raw_buf);
 }
