@@ -15,6 +15,7 @@ mojo_sdk_source_set("tests") {
     "buffer_unittest.cc",
     "callback_unittest.cc",
     "connector_unittest.cc",
+    "constant_unittest.cc",
     "container_test_util.cc",
     "equals_unittest.cc",
     "handle_passing_unittest.cc",
