@@ -81,8 +81,10 @@ func Run(delegate Delegate, applicationRequest system.MojoHandle) {
 	impl.runner = stub
 	for {
 		if err := stub.ServeRequest(); err != nil {
-			// TODO(rogulenko): don't log in case message pipe was closed
-			log.Println(err)
+			connectionError, ok := err.(*bindings.ConnectionError)
+			if !ok || !connectionError.Closed() {
+				log.Println(err)
+			}
 			impl.RequestQuit()
 			break
 		}
