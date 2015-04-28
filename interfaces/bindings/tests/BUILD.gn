@@ -22,3 +22,17 @@ mojom("test_interfaces") {
     "validation_test_interfaces.mojom",
   ]
 }
+
+mojom("versioning_test_service_interfaces") {
+  testonly = true
+  sources = [
+    "versioning_test_service.mojom",
+  ]
+}
+
+mojom("versioning_test_client_interfaces") {
+  testonly = true
+  sources = [
+    "versioning_test_client.mojom",
+  ]
+}
