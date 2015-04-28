@@ -8,6 +8,7 @@
 #include "mojo/public/cpp/environment/environment.h"
 #include "mojo/public/cpp/utility/run_loop.h"
 #include "mojo/public/interfaces/bindings/tests/math_calculator.mojom.h"
+#include "mojo/public/interfaces/bindings/tests/sample_interfaces.mojom.h"
 #include "mojo/public/interfaces/bindings/tests/sample_service.mojom.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -174,6 +175,23 @@ class ReentrantServiceImpl : public sample::Service {
   int call_depth_;
   int max_call_depth_;
   Binding<sample::Service> binding_;
+};
+
+class IntegerAccessorImpl : public sample::IntegerAccessor {
+ public:
+  IntegerAccessorImpl() : integer_(0) {}
+  ~IntegerAccessorImpl() override {}
+
+  int64_t integer() const { return integer_; }
+
+ private:
+  // sample::IntegerAccessor implementation.
+  void GetInteger(const GetIntegerCallback& callback) override {
+    callback.Run(integer_, sample::ENUM_VALUE);
+  }
+  void SetInteger(int64_t data, sample::Enum type) override { integer_ = data; }
+
+  int64_t integer_;
 };
 
 class InterfacePtrTest : public testing::Test {
@@ -372,6 +390,53 @@ TEST_F(InterfacePtrTest, ReentrantWaitForIncomingMethodCall) {
   PumpMessages();
 
   EXPECT_EQ(2, impl.max_call_depth());
+}
+
+TEST_F(InterfacePtrTest, QueryVersion) {
+  IntegerAccessorImpl impl;
+  sample::IntegerAccessorPtr ptr;
+  Binding<sample::IntegerAccessor> binding(&impl, GetProxy(&ptr));
+
+  EXPECT_EQ(0u, ptr.version());
+
+  auto callback = [](uint32_t version) { EXPECT_EQ(3u, version); };
+  ptr.QueryVersion(callback);
+
+  PumpMessages();
+
+  EXPECT_EQ(3u, ptr.version());
+}
+
+TEST_F(InterfacePtrTest, RequireVersion) {
+  IntegerAccessorImpl impl;
+  sample::IntegerAccessorPtr ptr;
+  Binding<sample::IntegerAccessor> binding(&impl, GetProxy(&ptr));
+
+  EXPECT_EQ(0u, ptr.version());
+
+  ptr.RequireVersion(1u);
+  EXPECT_EQ(1u, ptr.version());
+  ptr->SetInteger(123, sample::ENUM_VALUE);
+  PumpMessages();
+  EXPECT_FALSE(ptr.encountered_error());
+  EXPECT_EQ(123, impl.integer());
+
+  ptr.RequireVersion(3u);
+  EXPECT_EQ(3u, ptr.version());
+  ptr->SetInteger(456, sample::ENUM_VALUE);
+  PumpMessages();
+  EXPECT_FALSE(ptr.encountered_error());
+  EXPECT_EQ(456, impl.integer());
+
+  // Require a version that is not supported by the impl side.
+  ptr.RequireVersion(4u);
+  // This value is set to the input of RequireVersion() synchronously.
+  EXPECT_EQ(4u, ptr.version());
+  ptr->SetInteger(789, sample::ENUM_VALUE);
+  PumpMessages();
+  EXPECT_TRUE(ptr.encountered_error());
+  // The call to SetInteger() after RequireVersion(4u) is ignored.
+  EXPECT_EQ(456, impl.integer());
 }
 
 class StrongMathCalculatorImpl : public math::Calculator, public ErrorHandler {

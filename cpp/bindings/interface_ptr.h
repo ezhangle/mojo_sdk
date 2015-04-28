@@ -94,6 +94,24 @@ class InterfacePtr {
   // Returns the version number of the interface that the remote side supports.
   uint32_t version() const { return internal_state_.version(); }
 
+  // Queries the max version that the remote side supports. On completion, the
+  // result will be returned as the input of |callback|. The version number of
+  // this interface pointer will also be updated.
+  void QueryVersion(const Callback<void(uint32_t)>& callback) {
+    internal_state_.QueryVersion(callback);
+  }
+
+  // If the remote side doesn't support the specified version, it will close its
+  // end of the message pipe asynchronously. This does nothing if it's already
+  // known that the remote side supports the specified version, i.e., if
+  // |version <= this->version()|.
+  //
+  // After calling RequireVersion() with a version not supported by the remote
+  // side, all subsequent calls to interface methods will be ignored.
+  void RequireVersion(uint32_t version) {
+    internal_state_.RequireVersion(version);
+  }
+
   // Closes the bound message pipe (if any) and returns the pointer to the
   // unbound state.
   void reset() {
