@@ -330,7 +330,7 @@ public interface Interface extends ConnectionErrorHandler, Closeable {
 
         /**
          * Returns a Proxy that will send messages to the given |handle|. This implies that the
-         * other end of the handle must be binded to an implementation of the interface.
+         * other end of the handle must be bound to an implementation of the interface.
          */
         public final P attachProxy(MessagePipeHandle handle, int version) {
             RouterImpl router = new RouterImpl(handle);
