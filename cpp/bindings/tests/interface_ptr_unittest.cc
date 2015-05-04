@@ -266,7 +266,7 @@ TEST_F(InterfacePtrTest, Resettable) {
   // Save this so we can test it later.
   Handle handle = pipe.handle0.get();
 
-  a = MakeProxy<math::Calculator>(pipe.handle0.Pass());
+  a = MakeProxy(InterfacePtrInfo<math::Calculator>(pipe.handle0.Pass(), 0u));
 
   EXPECT_FALSE(!a);
 
@@ -284,7 +284,7 @@ TEST_F(InterfacePtrTest, BindInvalidHandle) {
   EXPECT_FALSE(ptr.get());
   EXPECT_FALSE(ptr);
 
-  ptr.Bind(ScopedMessagePipeHandle());
+  ptr.Bind(InterfacePtrInfo<math::Calculator>());
   EXPECT_FALSE(ptr.get());
   EXPECT_FALSE(ptr);
 }
@@ -486,7 +486,7 @@ TEST(StrongConnectorTest, Math) {
                                &destroyed);
 
   math::CalculatorPtr calc;
-  calc.Bind(pipe.handle1.Pass());
+  calc.Bind(InterfacePtrInfo<math::Calculator>(pipe.handle1.Pass(), 0u));
 
   {
     // Suppose this is instantiated in a process that has the other end of the
@@ -556,7 +556,7 @@ TEST(WeakConnectorTest, Math) {
   WeakMathCalculatorImpl impl(pipe.handle0.Pass(), &error_received, &destroyed);
 
   math::CalculatorPtr calc;
-  calc.Bind(pipe.handle1.Pass());
+  calc.Bind(InterfacePtrInfo<math::Calculator>(pipe.handle1.Pass(), 0u));
 
   {
     // Suppose this is instantiated in a process that has the other end of the

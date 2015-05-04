@@ -73,16 +73,6 @@ class InterfacePtr {
       internal_state_.Bind(info.Pass(), waiter);
   }
 
-  // Similar to the previous method, but takes a message pipe handle as input.
-  //
-  // TODO(yzshen): Remove this method and change call sites to use the other
-  // Bind().
-  void Bind(
-      ScopedMessagePipeHandle handle,
-      const MojoAsyncWaiter* waiter = Environment::GetDefaultAsyncWaiter()) {
-    Bind(InterfacePtrInfo<Interface>(handle.Pass(), 0u), waiter);
-  }
-
   // Returns a raw pointer to the local proxy. Caller does not take ownership.
   // Note that the local proxy is thread hostile, as stated above.
   Interface* get() const { return internal_state_.instance(); }
@@ -155,15 +145,6 @@ class InterfacePtr {
     return state.PassInterface();
   }
 
-  // Similar to the previous method but returns the previously bound message
-  // pipe (if any).
-  //
-  // TODO(yzshen): Remove this method and change call sites to use
-  // PassInterface().
-  ScopedMessagePipeHandle PassMessagePipe() {
-    return PassInterface().PassHandle();
-  }
-
   // DO NOT USE. Exposed only for internal use and for testing.
   internal::InterfacePtrState<Interface>* internal_state() {
     return &internal_state_;
@@ -185,19 +166,16 @@ class InterfacePtr {
   mutable State internal_state_;
 };
 
-// If the specified message pipe handle is valid, returns an InterfacePtr bound
-// to it. Otherwise, returns an unbound InterfacePtr. The specified |waiter|
-// will be used as in the InterfacePtr::Bind() method.
-//
-// TODO(yzshen): Either remove it or change to use InterfacePtrInfo as the first
-// parameter.
+// If |info| is valid (containing a valid message pipe handle), returns an
+// InterfacePtr bound to it. Otherwise, returns an unbound InterfacePtr. The
+// specified |waiter| will be used as in the InterfacePtr::Bind() method.
 template <typename Interface>
 InterfacePtr<Interface> MakeProxy(
-    ScopedMessagePipeHandle handle,
+    InterfacePtrInfo<Interface> info,
     const MojoAsyncWaiter* waiter = Environment::GetDefaultAsyncWaiter()) {
   InterfacePtr<Interface> ptr;
-  if (handle.is_valid())
-    ptr.Bind(handle.Pass(), waiter);
+  if (info.is_valid())
+    ptr.Bind(info.Pass(), waiter);
   return ptr.Pass();
 }
 
